@@ -21,6 +21,7 @@ class Severity(str, Enum):
 class ExecutionPlan:
     rule_name: str
     rule_type: str
+    severity: Severity
 
     operation: str
     parameters: dict[str, Any]

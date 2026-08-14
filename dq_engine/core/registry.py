@@ -1,12 +1,18 @@
+from dq_engine.rules.completeness import NotNullRule
+
+
 class RuleRegistry:
 
     def __init__(self):
-        self._rules = {}
+        self._rules = {
+            "not_null": NotNullRule,
+        }
 
     def register(self, rule_type, rule_class):
         self._rules[rule_type] = rule_class
 
     def get(self, rule_type):
+
         if rule_type not in self._rules:
             raise ValueError(
                 f"Unknown rule type: {rule_type}"
@@ -15,6 +21,7 @@ class RuleRegistry:
         return self._rules[rule_type]
 
     def create(self, rule_type, **kwargs):
+
         rule_class = self.get(rule_type)
 
         return rule_class(**kwargs)
