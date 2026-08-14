@@ -1,3 +1,5 @@
+import pytest
+
 from dq_engine.backends.postgres import PostgresBackend
 from dq_engine.core.context import ExecutionContext
 from dq_engine.core.models import (
@@ -81,3 +83,32 @@ def test_postgres_backend_builds_expected_count_nulls_query():
     assert "AS failed_rows" in normalized_query
 
     assert "FROM public.orders" in normalized_query
+
+
+def test_postgres_backend_rejects_unsupported_operation():
+
+    backend = PostgresBackend(
+        connection_string="postgresql://dummy"
+    )
+
+    plan = ExecutionPlan(
+        rule_name="unsupported",
+        rule_type="test",
+        severity=Severity.LOW,
+        operation="does_not_exist",
+        parameters={},
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="Unsupported operation",
+    ):
+        backend._execute_plan(
+            plan=plan,
+            context=context,
+        )

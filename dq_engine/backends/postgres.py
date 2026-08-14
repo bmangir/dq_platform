@@ -19,6 +19,11 @@ class PostgresBackend(BaseBackend):
     ):
         self.connection_string = connection_string
 
+        self._executors = {
+            "count_nulls": self._count_nulls,
+            "row_count": self._row_count,
+        }
+
     def execute(
             self,
             plan: ExecutionPlan,
@@ -28,6 +33,7 @@ class PostgresBackend(BaseBackend):
         start_time = time.perf_counter()
 
         try:
+
             result = self._execute_plan(
                 plan=plan,
                 context=context,
@@ -65,26 +71,39 @@ class PostgresBackend(BaseBackend):
                 execution_time_ms=execution_time_ms,
             )
 
+    def _execute_query(
+            self,
+            query: str,
+    ):
+        with psycopg2.connect(
+                self.connection_string
+        ) as connection:
+
+            with connection.cursor() as cursor:
+
+                cursor.execute(query)
+
+                return cursor.fetchone()
+
     def _execute_plan(
             self,
             plan: ExecutionPlan,
             context: ExecutionContext,
     ) -> dict:
 
-        if plan.operation == "count_nulls":
-            return self._count_nulls(
-                plan=plan,
-                context=context,
+        executor = self._executors.get(
+            plan.operation
+        )
+
+        if executor is None:
+            raise ValueError(
+                f"Unsupported operation: "
+                f"{plan.operation}"
             )
 
-        if plan.operation == "row_count":
-            return self._row_count(
-                plan=plan,
-                context=context,
-            )
-
-        raise ValueError(
-            f"Unsupported operation: {plan.operation}"
+        return executor(
+            plan=plan,
+            context=context,
         )
 
     def _count_nulls(
@@ -98,17 +117,9 @@ class PostgresBackend(BaseBackend):
             context=context,
         )
 
-        with psycopg2.connect(
-                self.connection_string
-        ) as connection:
-
-            with connection.cursor() as cursor:
-
-                cursor.execute(query)
-
-                total_rows, failed_rows = (
-                    cursor.fetchone()
-                )
+        total_rows, failed_rows = (
+            self._execute_query(query)
+        )
 
         status = (
             CheckStatus.PASSED
@@ -157,17 +168,9 @@ class PostgresBackend(BaseBackend):
             context=context,
         )
 
-        with psycopg2.connect(
-                self.connection_string
-        ) as connection:
+        row = self._execute_query(query)
 
-            with connection.cursor() as cursor:
-
-                cursor.execute(query)
-
-                row = cursor.fetchone()
-
-                actual = row[0]
+        actual = row[0]
 
         min_rows = plan.parameters.get("min")
         max_rows = plan.parameters.get("max")
@@ -185,6 +188,26 @@ class PostgresBackend(BaseBackend):
             if passed
             else CheckStatus.FAILED
         )
+
+        return {
+            "status": status,
+            "total_rows": actual,
+            "failed_rows": 0 if passed else 1,
+            "expected": {
+                "min": min_rows,
+                "max": max_rows,
+            },
+            "actual": actual,
+            "message": (
+                "Row count is within the expected range."
+                if passed
+                else (
+                    f"Row count {actual} is outside "
+                    f"the expected range "
+                    f"[{min_rows}, {max_rows}]."
+                )
+            ),
+        }
 
         return {
             "status": status,
