@@ -1,0 +1,19 @@
+table: public.orders
+
+checks:
+
+  - name: order_id_not_null
+    type: not_null
+    column: order_id
+    severity: critical
+
+  - name: order_id_unique
+    type: unique
+    column: order_id
+    severity: critical
+
+  - name: amount_positive
+    type: range
+    column: amount
+    min: 0
+    severity: high
