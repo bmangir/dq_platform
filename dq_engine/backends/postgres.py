@@ -66,10 +66,10 @@ class PostgresBackend(BaseBackend):
             )
 
     def _execute_plan(
-                self,
-                plan: ExecutionPlan,
-                context: ExecutionContext,
-        ) -> dict:
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> dict:
 
         if plan.operation == "count_nulls":
             return self._count_nulls(
@@ -82,24 +82,17 @@ class PostgresBackend(BaseBackend):
         )
 
     def _count_nulls(
-                self,
-                plan: ExecutionPlan,
-                context: ExecutionContext,
-        ) -> dict:
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> dict:
 
-        column = plan.parameters["column"]
-        table = context.table
+        query = self._build_count_nulls_query(
+            plan=plan,
+            context=context,
+        )
 
-        query = f"""
-            SELECT
-                COUNT(*) AS total_rows,
-                COUNT(*) FILTER (
-                    WHERE "{column}" IS NULL
-                ) AS failed_rows
-            FROM {table}
-        """
-
-        with psycopg.connect(
+        with psycopg2.connect(
                 self.connection_string
         ) as connection:
 
@@ -129,3 +122,21 @@ class PostgresBackend(BaseBackend):
                 else f"{failed_rows} NULL values found."
             ),
         }
+
+    def _build_count_nulls_query(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> str:
+
+        column = plan.parameters["column"]
+        table = context.table
+
+        return f"""
+            SELECT
+                COUNT(*) AS total_rows,
+                COUNT(*) FILTER (
+                    WHERE "{column}" IS NULL
+                ) AS failed_rows
+            FROM {table}
+        """
