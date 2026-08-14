@@ -22,6 +22,7 @@ class NotNullRule(BaseRule):
         return ExecutionPlan(
             rule_name=self.name,
             rule_type=self.rule_type,
+            severity=self.severity,
             operation="count_nulls",
             parameters={
                 "column": column,

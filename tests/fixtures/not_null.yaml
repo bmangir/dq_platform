@@ -1,0 +1,8 @@
+table: public.orders
+
+checks:
+
+  - name: order_id_not_null
+    type: not_null
+    column: order_id
+    severity: critical
