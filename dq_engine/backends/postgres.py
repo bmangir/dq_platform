@@ -209,26 +209,6 @@ class PostgresBackend(BaseBackend):
             ),
         }
 
-        return {
-            "status": status,
-            "total_rows": actual,
-            "failed_rows": 0 if passed else 1,
-            "expected": {
-                "min": min_rows,
-                "max": max_rows,
-            },
-            "actual": actual,
-            "message": (
-                "Row count is within the expected range."
-                if passed
-                else (
-                    f"Row count {actual} is outside "
-                    f"the expected range "
-                    f"[{min_rows}, {max_rows}]."
-                )
-            ),
-        }
-
     def _build_row_count_query(
             self,
             context: ExecutionContext,
