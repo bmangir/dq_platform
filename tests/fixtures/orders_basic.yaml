@@ -1,0 +1,16 @@
+table: public.orders
+
+checks:
+
+  - name: order_id_not_null
+    type: not_null
+    column: order_id
+    severity: critical
+
+  - name: orders_row_count
+    type: row_count
+    severity: high
+
+    threshold:
+      min: 1
+      max: 100000

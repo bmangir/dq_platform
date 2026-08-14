@@ -77,6 +77,12 @@ class PostgresBackend(BaseBackend):
                 context=context,
             )
 
+        if plan.operation == "row_count":
+            return self._row_count(
+                plan=plan,
+                context=context,
+            )
+
         raise ValueError(
             f"Unsupported operation: {plan.operation}"
         )
@@ -138,5 +144,76 @@ class PostgresBackend(BaseBackend):
                 COUNT(*) FILTER (
                     WHERE "{column}" IS NULL
                 ) AS failed_rows
+            FROM {table}
+        """
+
+    def _row_count(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> dict:
+
+        query = self._build_row_count_query(
+            context=context,
+        )
+
+        with psycopg2.connect(
+                self.connection_string
+        ) as connection:
+
+            with connection.cursor() as cursor:
+
+                cursor.execute(query)
+
+                row = cursor.fetchone()
+
+                actual = row[0]
+
+        min_rows = plan.parameters.get("min")
+        max_rows = plan.parameters.get("max")
+
+        passed = True
+
+        if min_rows is not None:
+            passed = passed and actual >= min_rows
+
+        if max_rows is not None:
+            passed = passed and actual <= max_rows
+
+        status = (
+            CheckStatus.PASSED
+            if passed
+            else CheckStatus.FAILED
+        )
+
+        return {
+            "status": status,
+            "total_rows": actual,
+            "failed_rows": 0 if passed else 1,
+            "expected": {
+                "min": min_rows,
+                "max": max_rows,
+            },
+            "actual": actual,
+            "message": (
+                "Row count is within the expected range."
+                if passed
+                else (
+                    f"Row count {actual} is outside "
+                    f"the expected range "
+                    f"[{min_rows}, {max_rows}]."
+                )
+            ),
+        }
+
+    def _build_row_count_query(
+            self,
+            context: ExecutionContext,
+    ) -> str:
+
+        table = context.table
+
+        return f"""
+            SELECT COUNT(*)
             FROM {table}
         """

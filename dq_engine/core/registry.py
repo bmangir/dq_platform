@@ -1,4 +1,7 @@
-from dq_engine.rules.completeness import NotNullRule
+from dq_engine.rules.completeness import (
+    NotNullRule,
+    RowCountRule,
+)
 
 
 class RuleRegistry:
@@ -6,6 +9,7 @@ class RuleRegistry:
     def __init__(self):
         self._rules = {
             "not_null": NotNullRule,
+            "row_count": RowCountRule,
         }
 
     def register(self, rule_type, rule_class):
