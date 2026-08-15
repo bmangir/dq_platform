@@ -1,0 +1,10 @@
+table: public.orders
+
+checks:
+
+  - name: order_amount_valid_range
+    type: range
+    column: order_amount
+    min: 0
+    max: 10000
+    severity: high

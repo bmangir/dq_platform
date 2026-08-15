@@ -5,6 +5,7 @@ from dq_engine.rules.completeness import (
 from dq_engine.rules.uniqueness import UniqueRule
 from dq_engine.rules.validity import (
     AcceptedValuesRule,
+    RangeRule,
 )
 
 
@@ -16,6 +17,7 @@ class RuleRegistry:
             "row_count": RowCountRule,
             "unique": UniqueRule,
             "accepted_values": AcceptedValuesRule,
+            "range": RangeRule,
         }
 
     def register(self, rule_type, rule_class):

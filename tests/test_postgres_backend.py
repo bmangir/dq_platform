@@ -226,3 +226,70 @@ def test_postgres_backend_builds_accepted_values_query():
         "pending",
         "cancelled",
     ]
+
+
+def test_postgres_backend_builds_range_query():
+
+    backend = PostgresBackend(
+        connection_string="postgresql://dummy"
+    )
+
+    plan = ExecutionPlan(
+        rule_name="order_amount_valid_range",
+        rule_type="range",
+        severity=Severity.HIGH,
+        operation="range",
+        parameters={
+            "column": "order_amount",
+            "min": 0,
+            "max": 10000,
+        },
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    query, parameters = (
+        backend._build_range_query(
+            plan=plan,
+            context=context,
+        )
+    )
+
+    normalized_query = " ".join(
+        query.split()
+    )
+
+    assert (
+            'COUNT(*) AS total_rows'
+            in normalized_query
+    )
+
+    assert (
+            'AS failed_rows'
+            in normalized_query
+    )
+
+    assert (
+            '"order_amount" IS NOT NULL'
+            in normalized_query
+    )
+
+    assert (
+            '"order_amount" < %s'
+            in normalized_query
+    )
+
+    assert (
+            '"order_amount" > %s'
+            in normalized_query
+    )
+
+    assert (
+            "FROM public.orders"
+            in normalized_query
+    )
+
+    assert parameters == [0, 10000]

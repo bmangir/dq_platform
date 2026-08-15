@@ -89,3 +89,43 @@ def test_postgres_backend_executes_unique(
     assert result.failed_rows == 1
     assert result.expected == 0
     assert result.actual == 1
+
+
+def test_postgres_backend_executes_range(
+        invalid_order_amount_data,
+):
+
+    connection_string = (
+        get_postgres_connection_string()
+    )
+
+    backend = PostgresBackend(
+        connection_string=connection_string
+    )
+
+    plan = ExecutionPlan(
+        rule_name="order_amount_valid_range",
+        rule_type="range",
+        severity=Severity.HIGH,
+        operation="range",
+        parameters={
+            "column": "order_amount",
+            "min": 0,
+            "max": 10000,
+        },
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    result = backend.execute(
+        plan=plan,
+        context=context,
+    )
+
+    assert result.status == CheckStatus.FAILED
+    assert result.total_rows == 5
+    assert result.failed_rows == 1
+    assert result.actual == 1

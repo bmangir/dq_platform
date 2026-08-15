@@ -6,7 +6,7 @@ from dq_engine.rules.completeness import (
     RowCountRule,
 )
 from dq_engine.rules.uniqueness import UniqueRule
-from dq_engine.rules.validity import AcceptedValuesRule
+from dq_engine.rules.validity import AcceptedValuesRule, RangeRule
 
 
 def test_not_null_rule_builds_execution_plan():
@@ -250,3 +250,131 @@ def test_accepted_values_requires_list():
             match="values.*list",
     ):
         rule.build(context)
+
+
+def test_range_rule_builds_execution_plan():
+
+    rule = RangeRule(
+        name="order_amount_valid_range",
+        severity=Severity.HIGH,
+        column="order_amount",
+        min=0,
+        max=10000,
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    plan = rule.build(context)
+
+    assert plan.rule_name == (
+        "order_amount_valid_range"
+    )
+
+    assert plan.rule_type == "range"
+    assert plan.severity == Severity.HIGH
+
+    assert plan.operation == "range"
+
+    assert plan.parameters == {
+        "column": "order_amount",
+        "min": 0,
+        "max": 10000,
+    }
+
+
+def test_range_rule_builds_execution_plan():
+
+    rule = RangeRule(
+        name="order_amount_valid_range",
+        severity=Severity.HIGH,
+        column="order_amount",
+        min=0,
+        max=10000,
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    plan = rule.build(context)
+
+    assert plan.rule_name == (
+        "order_amount_valid_range"
+    )
+
+    assert plan.rule_type == "range"
+    assert plan.severity == Severity.HIGH
+
+    assert plan.operation == "range"
+
+    assert plan.parameters == {
+        "column": "order_amount",
+        "min": 0,
+        "max": 10000,
+    }
+
+
+def test_range_rejects_invalid_bounds():
+
+    rule = RangeRule(
+        name="order_amount_valid_range",
+        severity=Severity.HIGH,
+        column="order_amount",
+        min=100,
+        max=10,
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="min.*greater than.*max",
+    ):
+        rule.build(context)
+
+
+def test_range_allows_only_min():
+
+    rule = RangeRule(
+        name="order_amount_valid_range",
+        severity=Severity.HIGH,
+        column="order_amount",
+        min=0,
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    plan = rule.build(context)
+
+    assert plan.parameters["min"] == 0
+    assert plan.parameters["max"] is None
+
+
+def test_range_allows_only_min():
+
+    rule = RangeRule(
+        name="order_amount_valid_range",
+        severity=Severity.HIGH,
+        column="order_amount",
+        min=0,
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    plan = rule.build(context)
+
+    assert plan.parameters["min"] == 0
+    assert plan.parameters["max"] is None

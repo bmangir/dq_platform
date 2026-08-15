@@ -148,3 +148,85 @@ def test_engine_accepts_valid_values_on_postgres(
     assert result.actual == 0
 
     assert result.execution_time_ms is not None
+
+
+def test_engine_runs_range_on_postgres(
+        invalid_order_amount_data,
+):
+
+    registry = RuleRegistry()
+
+    engine = DQEngine.from_config(
+        "tests/fixtures/orders_range.yaml",
+        registry=registry,
+    )
+
+    backend = PostgresBackend(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
+
+    results = engine.run(
+        source=None,
+        backend=backend,
+    )
+
+    assert len(results) == 1
+
+    result = results[0]
+
+    assert result.rule_name == (
+        "order_amount_valid_range"
+    )
+
+    assert result.rule_type == "range"
+
+    assert result.status == CheckStatus.FAILED
+
+    assert result.total_rows == 5
+    assert result.failed_rows == 1
+    assert result.actual == 1
+
+    assert result.execution_time_ms is not None
+
+
+def test_engine_accepts_valid_range_on_postgres(
+        valid_orders_data,
+):
+
+    registry = RuleRegistry()
+
+    engine = DQEngine.from_config(
+        "tests/fixtures/orders_range.yaml",
+        registry=registry,
+    )
+
+    backend = PostgresBackend(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
+
+    results = engine.run(
+        source=None,
+        backend=backend,
+    )
+
+    assert len(results) == 1
+
+    result = results[0]
+
+    assert result.rule_name == (
+        "order_amount_valid_range"
+    )
+
+    assert result.rule_type == "range"
+
+    assert result.status == CheckStatus.PASSED
+
+    assert result.total_rows == 5
+    assert result.failed_rows == 0
+    assert result.actual == 0
+
+    assert result.execution_time_ms is not None

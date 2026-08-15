@@ -24,6 +24,7 @@ class PostgresBackend(BaseBackend):
             "row_count": self._row_count,
             "unique": self._unique,
             "accepted_values": self._accepted_values,
+            "range": self._range,
         }
 
     def execute(
@@ -349,6 +350,92 @@ class PostgresBackend(BaseBackend):
                 if failed_rows == 0
                 else (
                     f"{failed_rows} invalid "
+                    "value(s) found."
+                )
+            ),
+        }
+
+    def _build_range_query(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> tuple[str, list]:
+
+        column = plan.parameters["column"]
+        minimum = plan.parameters["min"]
+        maximum = plan.parameters["max"]
+
+        conditions = []
+        parameters = []
+
+        if minimum is not None:
+            conditions.append(
+                f'"{column}" < %s'
+            )
+            parameters.append(minimum)
+
+        if maximum is not None:
+            conditions.append(
+                f'"{column}" > %s'
+            )
+            parameters.append(maximum)
+
+        invalid_condition = " OR ".join(
+            conditions
+        )
+
+        query = f"""
+            SELECT
+                COUNT(*) AS total_rows,
+                COUNT(*) FILTER (
+                    WHERE "{column}" IS NOT NULL
+                      AND ({invalid_condition})
+                ) AS failed_rows
+            FROM {context.table}
+        """
+
+        return query, parameters
+
+    def _range(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> dict:
+
+        query, parameters = (
+            self._build_range_query(
+                plan=plan,
+                context=context,
+            )
+        )
+
+        total_rows, failed_rows = (
+            self._execute_query(
+                query,
+                parameters,
+            )
+        )
+
+        status = (
+            CheckStatus.PASSED
+            if failed_rows == 0
+            else CheckStatus.FAILED
+        )
+
+        return {
+            "status": status,
+            "total_rows": total_rows,
+            "failed_rows": failed_rows,
+            "expected": {
+                "min": plan.parameters["min"],
+                "max": plan.parameters["max"],
+            },
+            "actual": failed_rows,
+            "message": (
+                "All values are within range."
+                if failed_rows == 0
+                else (
+                    f"{failed_rows} out-of-range "
                     "value(s) found."
                 )
             ),
