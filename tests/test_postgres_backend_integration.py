@@ -12,8 +12,9 @@ from dq_engine.database.connection import (
 )
 
 
-def test_postgres_backend_executes_count_nulls():
-
+def test_postgres_backend_executes_count_nulls(
+        null_order_id_data,
+):
     backend = PostgresBackend(
         connection_string=(
             get_postgres_connection_string()

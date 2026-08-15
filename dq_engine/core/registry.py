@@ -3,6 +3,9 @@ from dq_engine.rules.completeness import (
     RowCountRule,
 )
 from dq_engine.rules.uniqueness import UniqueRule
+from dq_engine.rules.validity import (
+    AcceptedValuesRule,
+)
 
 
 class RuleRegistry:
@@ -12,6 +15,7 @@ class RuleRegistry:
             "not_null": NotNullRule,
             "row_count": RowCountRule,
             "unique": UniqueRule,
+            "accepted_values": AcceptedValuesRule,
         }
 
     def register(self, rule_type, rule_class):

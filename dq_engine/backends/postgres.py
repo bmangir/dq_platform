@@ -23,6 +23,7 @@ class PostgresBackend(BaseBackend):
             "count_nulls": self._count_nulls,
             "row_count": self._row_count,
             "unique": self._unique,
+            "accepted_values": self._accepted_values,
         }
 
     def execute(
@@ -75,6 +76,7 @@ class PostgresBackend(BaseBackend):
     def _execute_query(
             self,
             query: str,
+            parameters=None,
     ):
         with psycopg2.connect(
                 self.connection_string
@@ -82,7 +84,10 @@ class PostgresBackend(BaseBackend):
 
             with connection.cursor() as cursor:
 
-                cursor.execute(query)
+                cursor.execute(
+                    query,
+                    parameters,
+                )
 
                 return cursor.fetchone()
 
@@ -277,6 +282,73 @@ class PostgresBackend(BaseBackend):
                 if duplicate_rows == 0
                 else (
                     f"{duplicate_rows} duplicate "
+                    "value(s) found."
+                )
+            ),
+        }
+
+    def _build_accepted_values_query(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> tuple[str, list]:
+
+        column = plan.parameters["column"]
+        values = plan.parameters["values"]
+
+        placeholders = ", ".join(
+            ["%s"] * len(values)
+        )
+
+        query = f"""
+            SELECT
+                COUNT(*) AS total_rows,
+                COUNT(*) FILTER (
+                    WHERE "{column}" IS NOT NULL
+                      AND "{column}" NOT IN ({placeholders})
+                ) AS failed_rows
+            FROM {context.table}
+        """
+
+        return query, values
+
+    def _accepted_values(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> dict:
+
+        query, parameters = (
+            self._build_accepted_values_query(
+                plan=plan,
+                context=context,
+            )
+        )
+
+        total_rows, failed_rows = (
+            self._execute_query(
+                query,
+                parameters,
+            )
+        )
+
+        status = (
+            CheckStatus.PASSED
+            if failed_rows == 0
+            else CheckStatus.FAILED
+        )
+
+        return {
+            "status": status,
+            "total_rows": total_rows,
+            "failed_rows": failed_rows,
+            "expected": plan.parameters["values"],
+            "actual": failed_rows,
+            "message": (
+                "All values are accepted."
+                if failed_rows == 0
+                else (
+                    f"{failed_rows} invalid "
                     "value(s) found."
                 )
             ),

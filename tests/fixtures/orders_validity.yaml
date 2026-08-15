@@ -1,0 +1,12 @@
+table: public.orders
+
+checks:
+
+  - name: order_status_valid
+    type: accepted_values
+    column: order_status
+    values:
+      - completed
+      - pending
+      - cancelled
+    severity: high

@@ -157,3 +157,72 @@ def test_postgres_backend_builds_unique_query():
     )
 
     assert "FROM public.orders" in normalized_query
+
+
+def test_postgres_backend_builds_accepted_values_query():
+
+    backend = PostgresBackend(
+        connection_string="postgresql://dummy"
+    )
+
+    plan = ExecutionPlan(
+        rule_name="order_status_valid",
+        rule_type="accepted_values",
+        severity=Severity.HIGH,
+        operation="accepted_values",
+        parameters={
+            "column": "order_status",
+            "values": [
+                "completed",
+                "pending",
+                "cancelled",
+            ],
+        },
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    query, parameters = (
+        backend._build_accepted_values_query(
+            plan=plan,
+            context=context,
+        )
+    )
+
+    normalized_query = " ".join(
+        query.split()
+    )
+
+    assert (
+            'COUNT(*) AS total_rows'
+            in normalized_query
+    )
+
+    assert (
+            'AS failed_rows'
+            in normalized_query
+    )
+
+    assert (
+            '"order_status" IS NOT NULL'
+            in normalized_query
+    )
+
+    assert (
+            '"order_status" NOT IN (%s, %s, %s)'
+            in normalized_query
+    )
+
+    assert (
+            "FROM public.orders"
+            in normalized_query
+    )
+
+    assert parameters == [
+        "completed",
+        "pending",
+        "cancelled",
+    ]

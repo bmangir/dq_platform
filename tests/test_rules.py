@@ -6,6 +6,7 @@ from dq_engine.rules.completeness import (
     RowCountRule,
 )
 from dq_engine.rules.uniqueness import UniqueRule
+from dq_engine.rules.validity import AcceptedValuesRule
 
 
 def test_not_null_rule_builds_execution_plan():
@@ -148,5 +149,104 @@ def test_unique_rule_requires_column():
     with pytest.raises(
             ValueError,
             match="requires a 'column'",
+    ):
+        rule.build(context)
+
+def test_accepted_values_rule_builds_execution_plan():
+
+    rule = AcceptedValuesRule(
+        name="order_status_valid",
+        severity=Severity.HIGH,
+        column="order_status",
+        values=[
+            "completed",
+            "pending",
+            "cancelled",
+        ],
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    plan = rule.build(context)
+
+    assert plan.rule_name == "order_status_valid"
+    assert plan.rule_type == "accepted_values"
+    assert plan.severity == Severity.HIGH
+
+    assert plan.operation == "accepted_values"
+
+    assert plan.parameters == {
+        "column": "order_status",
+        "values": [
+            "completed",
+            "pending",
+            "cancelled",
+        ],
+    }
+
+
+def test_accepted_values_requires_column():
+
+    rule = AcceptedValuesRule(
+        name="order_status_valid",
+        severity=Severity.HIGH,
+        values=[
+            "completed",
+            "pending",
+        ],
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="requires a 'column'",
+    ):
+        rule.build(context)
+
+
+def test_accepted_values_requires_values():
+
+    rule = AcceptedValuesRule(
+        name="order_status_valid",
+        severity=Severity.HIGH,
+        column="order_status",
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="requires at least one accepted value",
+    ):
+        rule.build(context)
+
+
+def test_accepted_values_requires_list():
+
+    rule = AcceptedValuesRule(
+        name="order_status_valid",
+        severity=Severity.HIGH,
+        column="order_status",
+        values="completed",
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="values.*list",
     ):
         rule.build(context)
