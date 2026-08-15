@@ -1,5 +1,6 @@
 import pytest
 
+from dq_engine.config.loader import ConfigLoader
 from dq_engine.config.schema import (
     ConfigValidator,
 )
@@ -67,3 +68,40 @@ def test_invalid_severity():
 
     with pytest.raises(ValueError):
         ConfigValidator().validate(config)
+
+
+def test_config_loads_anomaly_configuration():
+
+    loader = ConfigLoader()
+
+    config = loader.load(
+        "configs/examples/orders_anomaly.yaml"
+    )
+
+    check = next(
+        check
+        for check in config.checks
+        if check.name == "orders_row_count"
+    )
+
+    assert check.anomaly is not None
+
+    assert (
+            check.anomaly["enabled"]
+            is True
+    )
+
+    assert (
+            check.anomaly["method"]
+            == "percentage_change"
+    )
+
+    assert (
+            check.anomaly["threshold"]
+            == 0.30
+    )
+
+    assert (
+            check.anomaly["min_history"]
+            == 1
+    )

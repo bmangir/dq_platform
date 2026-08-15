@@ -9,7 +9,8 @@ class CheckConfig:
     name: str
     type: str
     severity: Severity
-    parameters: dict[str, Any] = field(default_factory=dict)
+    parameters: dict
+    anomaly: dict | None = None
 
 
 @dataclass
@@ -66,6 +67,7 @@ class ConfigValidator:
         name = check.get("name")
         rule_type = check.get("type")
         severity = check.get("severity")
+        anomaly = check.get("anomaly"),
 
         if not name:
             raise ValueError(
@@ -105,4 +107,5 @@ class ConfigValidator:
             type=rule_type,
             severity=severity_enum,
             parameters=parameters,
+            anomaly=anomaly,
         )
