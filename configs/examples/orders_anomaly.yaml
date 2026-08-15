@@ -1,0 +1,38 @@
+table:
+  name: public.orders
+
+checks:
+
+  - name: order_id_not_null
+    type: not_null
+    severity: critical
+
+    column: order_id
+
+    anomaly:
+      enabled: true
+      method: threshold
+      threshold: 0
+      direction: above
+
+  - name: orders_row_count
+    type: row_count
+    severity: high
+
+    anomaly:
+      enabled: true
+      method: percentage_change
+      threshold: 0.30
+      min_history: 1
+
+  - name: order_id_unique
+    type: unique
+    severity: high
+
+    column: order_id
+
+    anomaly:
+      enabled: true
+      method: z_score
+      threshold: 3.0
+      min_history: 5

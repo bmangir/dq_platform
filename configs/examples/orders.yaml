@@ -1,4 +1,5 @@
-table: public.orders
+table:
+  name: public.orders
 
 checks:
 
