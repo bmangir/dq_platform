@@ -119,3 +119,71 @@ def test_postgres_result_store_saves_run_result():
 
         cursor.close()
         connection.close()
+
+
+def test_postgres_result_store_get_run(
+        valid_orders_data,
+):
+
+    context = RunContext.create()
+
+    check_result = CheckResult(
+        rule_name="order_id_not_null",
+        rule_type="not_null",
+        status=CheckStatus.PASSED,
+        severity=Severity.CRITICAL,
+        total_rows=5,
+        failed_rows=0,
+        expected=0,
+        actual=0,
+        metric="null_count",
+    )
+
+    run_result = RunResult(
+        run_id=context.run_id,
+        started_at=context.started_at,
+        finished_at=context.started_at,
+        results=[check_result],
+    )
+
+    store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
+
+    store.save(run_result)
+
+    found = store.get_run(
+        run_result.run_id
+    )
+
+    assert found is not None
+    assert found.run_id == run_result.run_id
+
+    assert len(found.results) == 1
+
+    result = found.results[0]
+
+    assert result.rule_name == "order_id_not_null"
+    assert result.rule_type == "not_null"
+    assert result.status == CheckStatus.PASSED
+    assert result.metric == "null_count"
+    assert result.actual == 0
+
+
+def test_postgres_result_store_returns_none_for_unknown_run():
+
+    store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
+
+    context = RunContext.create()
+
+    result = store.get_run(
+        context.run_id
+    )
+
+    assert result is None

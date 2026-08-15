@@ -1,7 +1,14 @@
 import json
+from datetime import datetime
+from uuid import UUID
 
 import psycopg2
 
+from dq_engine.core.models import (
+    CheckResult,
+    CheckStatus,
+    Severity,
+)
 from dq_engine.core.result_store import ResultStore
 from dq_engine.core.results import RunResult
 
@@ -96,3 +103,137 @@ class PostgresResultStore(ResultStore):
         finally:
             cursor.close()
             connection.close()
+
+    def get_run(
+            self,
+            run_id: UUID,
+    ) -> RunResult | None:
+
+        connection = psycopg2.connect(
+            self.connection_string
+        )
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    run_id,
+                    started_at,
+                    finished_at,
+                    success
+                FROM dq_runs
+                WHERE run_id = %s
+                """,
+                (str(run_id),),
+            )
+
+            run_row = cursor.fetchone()
+
+            if run_row is None:
+                return None
+
+            cursor.execute(
+                """
+                SELECT
+                    rule_name,
+                    rule_type,
+                    status,
+                    severity,
+                    total_rows,
+                    failed_rows,
+                    expected,
+                    actual,
+                    metric,
+                    message,
+                    execution_time_ms
+                FROM dq_check_results
+                WHERE run_id = %s
+                ORDER BY id
+                """,
+                (str(run_id),),
+            )
+
+            check_rows = cursor.fetchall()
+
+            results = []
+
+            for row in check_rows:
+
+                results.append(
+                    CheckResult(
+                        rule_name=row[0],
+                        rule_type=row[1],
+                        status=CheckStatus(row[2]),
+                        severity=Severity(row[3]),
+                        total_rows=row[4],
+                        failed_rows=row[5],
+                        expected=row[6],
+                        actual=row[7],
+                        metric=row[8],
+                        message=row[9],
+                        execution_time_ms=row[10],
+                    )
+                )
+
+            return RunResult(
+                run_id=UUID(str(run_row[0])),
+                started_at=run_row[1],
+                finished_at=run_row[2],
+                results=results,
+            )
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    def get_history(
+            self,
+            rule_name: str,
+            limit: int = 30,
+    ) -> list[RunResult]:
+
+        connection = psycopg2.connect(
+            self.connection_string
+        )
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                """
+                SELECT DISTINCT
+                    r.run_id
+                FROM dq_runs r
+                INNER JOIN dq_check_results c
+                    ON r.run_id = c.run_id
+                WHERE c.rule_name = %s
+                ORDER BY r.started_at DESC
+                LIMIT %s
+                """,
+                (
+                    rule_name,
+                    limit,
+                ),
+            )
+
+            run_ids = [
+                UUID(str(row[0]))
+                for row in cursor.fetchall()
+            ]
+
+        finally:
+            cursor.close()
+            connection.close()
+
+        history = []
+
+        for run_id in run_ids:
+
+            run_result = self.get_run(run_id)
+
+            if run_result is not None:
+                history.append(run_result)
+
+        return history
