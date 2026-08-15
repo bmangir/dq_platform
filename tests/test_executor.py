@@ -1,15 +1,12 @@
-from datetime import datetime
-
 from dq_engine.core.executor import DQExecutor
 from dq_engine.core.models import (
     CheckResult,
     CheckStatus,
     Severity,
 )
-from dq_engine.core.metric_extractor import (
-    MetricExtractor,
+from dq_engine.storage.memory import (
+    InMemoryResultStore,
 )
-from dq_engine.core.run import RunContext
 
 
 class FakeEngine:
@@ -35,23 +32,13 @@ class FakeBackend:
     pass
 
 
-class FakeResultStore:
+def test_executor_runs_dq_and_saves_result():
 
-    def __init__(self):
-        self.saved = []
-
-    def save(self, run_result):
-        self.saved.append(run_result)
-
-
-def test_executor_runs_and_persists_result():
-
-    store = FakeResultStore()
+    store = InMemoryResultStore()
 
     executor = DQExecutor(
         engine=FakeEngine(),
         result_store=store,
-        metric_extractor=MetricExtractor(),
     )
 
     result = executor.run(
@@ -68,9 +55,37 @@ def test_executor_runs_and_persists_result():
             == "order_id_not_null"
     )
 
-    assert len(store.saved) == 1
+    assert len(store.results) == 1
 
     assert (
-            store.saved[0].run_id
+            store.results[0].run_id
             == result.run_id
     )
+
+
+def test_executor_creates_valid_run_result():
+
+    store = InMemoryResultStore()
+
+    executor = DQExecutor(
+        engine=FakeEngine(),
+        result_store=store,
+    )
+
+    result = executor.run(
+        source=None,
+        backend=FakeBackend(),
+    )
+
+    assert result.run_id is not None
+
+    assert result.started_at is not None
+
+    assert result.finished_at is not None
+
+    assert (
+            result.finished_at
+            >= result.started_at
+    )
+
+    assert result.success is True

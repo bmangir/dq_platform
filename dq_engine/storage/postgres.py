@@ -11,6 +11,7 @@ from dq_engine.core.models import (
 )
 from dq_engine.core.result_store import ResultStore
 from dq_engine.core.results import RunResult
+from dq_engine.core.metrics import Metric
 
 
 class PostgresResultStore(ResultStore):
@@ -91,6 +92,62 @@ class PostgresResultStore(ResultStore):
                         result.metric,
                         result.message,
                         result.execution_time_ms,
+                    ),
+                )
+
+            connection.commit()
+
+        except Exception:
+            connection.rollback()
+            raise
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    def save_metrics(
+            self,
+            metrics: list[Metric],
+    ) -> None:
+
+        if not metrics:
+            return
+
+        connection = psycopg2.connect(
+            self.connection_string
+        )
+
+        try:
+            cursor = connection.cursor()
+
+            for metric in metrics:
+
+                cursor.execute(
+                    """
+                    INSERT INTO dq_metrics (
+                        run_id,
+                        rule_name,
+                        rule_type,
+                        metric_name,
+                        value,
+                        timestamp
+                    )
+                    VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s
+                    )
+                    """,
+                    (
+                        str(metric.run_id),
+                        metric.rule_name,
+                        metric.rule_type,
+                        metric.metric_name,
+                        metric.value,
+                        metric.timestamp,
                     ),
                 )
 

@@ -1,5 +1,9 @@
+from datetime import datetime
+from uuid import uuid4
+
 import psycopg2
 
+from dq_engine.core.metrics import Metric
 from dq_engine.core.models import (
     CheckResult,
     CheckStatus,
@@ -187,3 +191,48 @@ def test_postgres_result_store_returns_none_for_unknown_run():
     )
 
     assert result is None
+
+
+def test_postgres_result_store_saves_metric():
+
+    store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
+
+    run_id = uuid4()
+
+    now = datetime.utcnow()
+
+    run_result = RunResult(
+        run_id=run_id,
+        started_at=now,
+        finished_at=now,
+        results=[
+            CheckResult(
+                rule_name="orders_row_count",
+                rule_type="row_count",
+                status=CheckStatus.PASSED,
+                severity=Severity.HIGH,
+                total_rows=5,
+                failed_rows=0,
+                expected=None,
+                actual=5,
+                metric="row_count",
+            )
+        ],
+    )
+
+    store.save(run_result)
+
+    metric = Metric(
+        run_id=run_id,
+        rule_name="orders_row_count",
+        rule_type="row_count",
+        metric_name="row_count",
+        value=5.0,
+        timestamp=now,
+    )
+
+    store.save_metrics([metric])

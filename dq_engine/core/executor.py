@@ -3,10 +3,8 @@ from datetime import datetime
 from dq_engine.core.metric_extractor import (
     MetricExtractor,
 )
-from dq_engine.core.run import (
-    RunContext,
-    RunResult,
-)
+from dq_engine.core.results import RunResult
+from dq_engine.core.run import RunContext
 
 
 class DQExecutor:
@@ -15,19 +13,21 @@ class DQExecutor:
             self,
             engine,
             result_store,
-            metric_extractor,
-            anomaly_engine=None,
+            metric_extractor=None,
     ):
         self.engine = engine
         self.result_store = result_store
-        self.metric_extractor = metric_extractor
-        self.anomaly_engine = anomaly_engine
+
+        self.metric_extractor = (
+                metric_extractor
+                or MetricExtractor()
+        )
 
     def run(
             self,
             source,
             backend,
-    ):
+    ) -> RunResult:
 
         context = RunContext.create()
 
