@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from dq_engine.core.results import RunResult
+from dq_engine.core.run import RunContext
 from dq_engine.config.loader import ConfigLoader
 from dq_engine.core.context import ExecutionContext
 
@@ -19,6 +23,8 @@ class DQEngine:
         )
 
     def run(self, source, backend):
+
+        run_context = RunContext.create()
 
         context = ExecutionContext(
             source=source,
@@ -45,4 +51,9 @@ class DQEngine:
 
             results.append(result)
 
-        return results
+        return RunResult(
+            run_id=run_context.run_id,
+            started_at=run_context.started_at,
+            finished_at=datetime.utcnow(),
+            results=results,
+        )

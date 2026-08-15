@@ -20,9 +20,9 @@ def test_engine_runs_not_null_rule():
         backend=backend,
     )
 
-    assert len(results) == 1
+    assert len(results.results) == 1
 
-    result = results[0]
+    result = results.results[0]
 
     assert result.rule_name == "order_id_not_null"
     assert result.rule_type == "not_null"

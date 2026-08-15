@@ -29,11 +29,11 @@ def test_engine_runs_basic_dq_checks_on_postgres(
         backend=backend,
     )
 
-    assert len(results) == 3
+    assert len(results.results) == 3
 
     results_by_name = {
         result.rule_name: result
-        for result in results
+        for result in results.results
     }
 
     not_null_result = results_by_name[
@@ -76,6 +76,11 @@ def test_engine_runs_basic_dq_checks_on_postgres(
     assert unique_result.failed_rows == 0
     assert unique_result.actual == 0
 
+    assert results.run_id is not None
+    assert results.started_at is not None
+    assert results.finished_at is not None
+    assert results.success is False
+
 
 def test_engine_runs_accepted_values_on_postgres(
         invalid_order_status_data,
@@ -99,9 +104,9 @@ def test_engine_runs_accepted_values_on_postgres(
         backend=backend,
     )
 
-    assert len(results) == 1
+    assert len(results.results) == 1
 
-    result = results[0]
+    result = results.results[0]
 
     assert result.rule_name == "order_status_valid"
     assert result.rule_type == "accepted_values"
@@ -145,9 +150,9 @@ def test_engine_accepts_valid_values_on_postgres(
         backend=backend,
     )
 
-    assert len(results) == 1
+    assert len(results.results) == 1
 
-    result = results[0]
+    result = results.results[0]
 
     assert result.rule_name == "order_status_valid"
     assert result.rule_type == "accepted_values"
@@ -167,6 +172,7 @@ def test_engine_accepts_valid_values_on_postgres(
     ]
 
     assert result.execution_time_ms is not None
+    assert results.success is True
 
 
 def test_engine_runs_range_on_postgres(
@@ -191,9 +197,9 @@ def test_engine_runs_range_on_postgres(
         backend=backend,
     )
 
-    assert len(results) == 1
+    assert len(results.results) == 1
 
-    result = results[0]
+    result = results.results[0]
 
     assert result.rule_name == (
         "order_amount_valid_range"
@@ -239,9 +245,9 @@ def test_engine_accepts_valid_range_on_postgres(
         backend=backend,
     )
 
-    assert len(results) == 1
+    assert len(results.results) == 1
 
-    result = results[0]
+    result = results.results[0]
 
     assert result.rule_name == (
         "order_amount_valid_range"
