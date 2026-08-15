@@ -47,3 +47,42 @@ def test_postgres_backend_executes_count_nulls():
     assert result.expected == 0
 
     assert result.actual == 1
+
+
+def test_postgres_backend_executes_unique():
+
+    backend = PostgresBackend(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
+
+    plan = ExecutionPlan(
+        rule_name="order_id_unique",
+        rule_type="unique",
+        severity=Severity.HIGH,
+        operation="unique",
+        parameters={
+            "column": "order_id",
+        },
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    result = backend.execute(
+        plan=plan,
+        context=context,
+    )
+
+    assert result.status == CheckStatus.FAILED
+
+    assert result.total_rows == 5
+
+    assert result.failed_rows == 1
+
+    assert result.expected == 0
+
+    assert result.actual == 1

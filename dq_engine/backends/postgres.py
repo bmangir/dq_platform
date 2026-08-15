@@ -22,6 +22,7 @@ class PostgresBackend(BaseBackend):
         self._executors = {
             "count_nulls": self._count_nulls,
             "row_count": self._row_count,
+            "unique": self._unique,
         }
 
     def execute(
@@ -220,3 +221,63 @@ class PostgresBackend(BaseBackend):
             SELECT COUNT(*)
             FROM {table}
         """
+
+    def _build_unique_query(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> str:
+
+        column = plan.parameters["column"]
+        table = context.table
+
+        return f"""
+            SELECT
+                COUNT(*) AS total_rows,
+                COUNT("{column}") AS non_null_rows,
+                COUNT(DISTINCT "{column}") AS distinct_rows
+            FROM {table}
+        """
+
+    def _unique(
+            self,
+            plan: ExecutionPlan,
+            context: ExecutionContext,
+    ) -> dict:
+
+        query = self._build_unique_query(
+            plan=plan,
+            context=context,
+        )
+
+        (
+            total_rows,
+            non_null_rows,
+            distinct_rows,
+        ) = self._execute_query(query)
+
+        duplicate_rows = (
+                non_null_rows - distinct_rows
+        )
+
+        status = (
+            CheckStatus.PASSED
+            if duplicate_rows == 0
+            else CheckStatus.FAILED
+        )
+
+        return {
+            "status": status,
+            "total_rows": total_rows,
+            "failed_rows": duplicate_rows,
+            "expected": 0,
+            "actual": duplicate_rows,
+            "message": (
+                "All non-null values are unique."
+                if duplicate_rows == 0
+                else (
+                    f"{duplicate_rows} duplicate "
+                    "value(s) found."
+                )
+            ),
+        }

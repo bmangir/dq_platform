@@ -112,3 +112,48 @@ def test_postgres_backend_rejects_unsupported_operation():
             plan=plan,
             context=context,
         )
+
+
+def test_postgres_backend_builds_unique_query():
+
+    backend = PostgresBackend(
+        connection_string="postgresql://dummy"
+    )
+
+    plan = ExecutionPlan(
+        rule_name="order_id_unique",
+        rule_type="unique",
+        severity=Severity.HIGH,
+        operation="unique",
+        parameters={
+            "column": "order_id",
+        },
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    query = backend._build_unique_query(
+        plan=plan,
+        context=context,
+    )
+
+    normalized_query = " ".join(
+        query.split()
+    )
+
+    assert "COUNT(*) AS total_rows" in normalized_query
+
+    assert (
+            'COUNT("order_id") AS non_null_rows'
+            in normalized_query
+    )
+
+    assert (
+            'COUNT(DISTINCT "order_id") AS distinct_rows'
+            in normalized_query
+    )
+
+    assert "FROM public.orders" in normalized_query

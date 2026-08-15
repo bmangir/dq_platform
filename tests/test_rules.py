@@ -5,6 +5,7 @@ from dq_engine.rules.completeness import (
     NotNullRule,
     RowCountRule,
 )
+from dq_engine.rules.uniqueness import UniqueRule
 
 
 def test_not_null_rule_builds_execution_plan():
@@ -102,5 +103,50 @@ def test_row_count_rule_rejects_invalid_threshold():
     with pytest.raises(
             ValueError,
             match="min > max",
+    ):
+        rule.build(context)
+
+
+def test_unique_rule_builds_execution_plan():
+
+    rule = UniqueRule(
+        name="order_id_unique",
+        severity=Severity.HIGH,
+        column="order_id",
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    plan = rule.build(context)
+
+    assert plan.rule_name == "order_id_unique"
+    assert plan.rule_type == "unique"
+    assert plan.severity == Severity.HIGH
+
+    assert plan.operation == "unique"
+
+    assert plan.parameters == {
+        "column": "order_id",
+    }
+
+
+def test_unique_rule_requires_column():
+
+    rule = UniqueRule(
+        name="order_id_unique",
+        severity=Severity.HIGH,
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="requires a 'column'",
     ):
         rule.build(context)
