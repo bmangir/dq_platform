@@ -36,6 +36,8 @@ def test_engine_runs_not_null_check_on_postgres():
 
     assert result.rule_type == "not_null"
 
+    assert result.metric == "null_count"
+
     assert result.status == CheckStatus.FAILED
 
     assert result.total_rows == 5

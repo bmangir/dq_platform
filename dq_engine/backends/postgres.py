@@ -55,6 +55,7 @@ class PostgresBackend(BaseBackend):
                 failed_rows=result["failed_rows"],
                 expected=result["expected"],
                 actual=result["actual"],
+                metric=result["metric"],
                 message=result["message"],
                 execution_time_ms=execution_time_ms,
             )
@@ -140,6 +141,7 @@ class PostgresBackend(BaseBackend):
             "failed_rows": failed_rows,
             "expected": 0,
             "actual": failed_rows,
+            "metric": "null_count",
             "message": (
                 "No NULL values found."
                 if failed_rows == 0
@@ -205,6 +207,7 @@ class PostgresBackend(BaseBackend):
                 "max": max_rows,
             },
             "actual": actual,
+            "metric": "row_count",
             "message": (
                 "Row count is within the expected range."
                 if passed
@@ -278,6 +281,7 @@ class PostgresBackend(BaseBackend):
             "failed_rows": duplicate_rows,
             "expected": 0,
             "actual": duplicate_rows,
+            "metric": "duplicate_count",
             "message": (
                 "All non-null values are unique."
                 if duplicate_rows == 0
@@ -345,6 +349,7 @@ class PostgresBackend(BaseBackend):
             "failed_rows": failed_rows,
             "expected": plan.parameters["values"],
             "actual": failed_rows,
+            "metric": "invalid_value_count",
             "message": (
                 "All values are accepted."
                 if failed_rows == 0
@@ -426,6 +431,7 @@ class PostgresBackend(BaseBackend):
             "status": status,
             "total_rows": total_rows,
             "failed_rows": failed_rows,
+            "metric": "out_of_range_count",
             "expected": {
                 "min": plan.parameters["min"],
                 "max": plan.parameters["max"],

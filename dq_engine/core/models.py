@@ -41,5 +41,7 @@ class CheckResult:
     expected: Any = None
     actual: Any = None
 
+    metric: str | None = None
+
     message: str | None = None
     execution_time_ms: float | None = None

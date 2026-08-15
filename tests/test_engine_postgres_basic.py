@@ -45,6 +45,7 @@ def test_engine_runs_basic_dq_checks_on_postgres(
             == CheckStatus.FAILED
     )
 
+    assert not_null_result.metric == "null_count"
     assert not_null_result.total_rows == 5
     assert not_null_result.failed_rows == 1
 
@@ -57,6 +58,7 @@ def test_engine_runs_basic_dq_checks_on_postgres(
             == CheckStatus.PASSED
     )
 
+    assert row_count_result.metric == "row_count"
     assert row_count_result.total_rows == 5
     assert row_count_result.actual == 5
 
@@ -69,6 +71,7 @@ def test_engine_runs_basic_dq_checks_on_postgres(
             == CheckStatus.PASSED
     )
 
+    assert unique_result.metric == "duplicate_count"
     assert unique_result.total_rows == 5
     assert unique_result.failed_rows == 0
     assert unique_result.actual == 0
@@ -105,9 +108,17 @@ def test_engine_runs_accepted_values_on_postgres(
 
     assert result.status == CheckStatus.FAILED
 
+    assert result.metric == "invalid_value_count"
+
     assert result.total_rows == 5
     assert result.failed_rows == 1
     assert result.actual == 1
+
+    assert result.expected == [
+        "completed",
+        "pending",
+        "cancelled",
+    ]
 
     assert result.execution_time_ms is not None
 
@@ -143,9 +154,17 @@ def test_engine_accepts_valid_values_on_postgres(
 
     assert result.status == CheckStatus.PASSED
 
+    assert result.metric == "invalid_value_count"
+
     assert result.total_rows == 5
     assert result.failed_rows == 0
     assert result.actual == 0
+
+    assert result.expected == [
+        "completed",
+        "pending",
+        "cancelled",
+    ]
 
     assert result.execution_time_ms is not None
 
@@ -184,9 +203,16 @@ def test_engine_runs_range_on_postgres(
 
     assert result.status == CheckStatus.FAILED
 
+    assert result.metric == "out_of_range_count"
+
     assert result.total_rows == 5
     assert result.failed_rows == 1
     assert result.actual == 1
+
+    assert result.expected == {
+        "min": 0,
+        "max": 10000,
+    }
 
     assert result.execution_time_ms is not None
 
@@ -225,8 +251,15 @@ def test_engine_accepts_valid_range_on_postgres(
 
     assert result.status == CheckStatus.PASSED
 
+    assert result.metric == "out_of_range_count"
+
     assert result.total_rows == 5
     assert result.failed_rows == 0
     assert result.actual == 0
+
+    assert result.expected == {
+        "min": 0,
+        "max": 10000,
+    }
 
     assert result.execution_time_ms is not None

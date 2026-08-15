@@ -1,5 +1,3 @@
-import psycopg2
-
 from dq_engine.backends.postgres import PostgresBackend
 from dq_engine.core.context import ExecutionContext
 from dq_engine.core.models import (
@@ -43,6 +41,8 @@ def test_postgres_backend_executes_count_nulls(
 
     assert result.status == CheckStatus.FAILED
 
+    assert result.metric == "null_count"
+
     assert result.total_rows == 5
 
     assert result.failed_rows == 1
@@ -85,6 +85,7 @@ def test_postgres_backend_executes_unique(
     )
 
     assert result.status == CheckStatus.FAILED
+    assert result.metric == "duplicate_count"
     assert result.total_rows == 5
     assert result.failed_rows == 1
     assert result.expected == 0
@@ -126,6 +127,56 @@ def test_postgres_backend_executes_range(
     )
 
     assert result.status == CheckStatus.FAILED
+    assert result.metric == "out_of_range_count"
     assert result.total_rows == 5
     assert result.failed_rows == 1
+    assert result.actual == 1
+
+
+def test_postgres_backend_executes_accepted_values(
+        invalid_order_status_data,
+):
+
+    connection_string = (
+        get_postgres_connection_string()
+    )
+
+    backend = PostgresBackend(
+        connection_string=connection_string
+    )
+
+    plan = ExecutionPlan(
+        rule_name="order_status_valid",
+        rule_type="accepted_values",
+        severity=Severity.HIGH,
+        operation="accepted_values",
+        parameters={
+            "column": "order_status",
+            "values": [
+                "completed",
+                "pending",
+                "cancelled",
+            ],
+        },
+    )
+
+    context = ExecutionContext(
+        source=None,
+        table="public.orders",
+    )
+
+    result = backend.execute(
+        plan=plan,
+        context=context,
+    )
+
+    assert result.status == CheckStatus.FAILED
+    assert result.metric == "invalid_value_count"
+    assert result.total_rows == 5
+    assert result.failed_rows == 1
+    assert result.expected == [
+        "completed",
+        "pending",
+        "cancelled",
+    ]
     assert result.actual == 1
