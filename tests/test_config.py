@@ -10,7 +10,9 @@ from dq_engine.core.models import Severity
 def test_valid_config():
 
     config = {
-        "table": "public.orders",
+        "table": {
+            "name": "public.orders",
+        },
         "checks": [
             {
                 "name": "order_id_not_null",
@@ -23,7 +25,7 @@ def test_valid_config():
 
     result = ConfigValidator().validate(config)
 
-    assert result.table == "public.orders"
+    assert result.table.name == "public.orders"
 
     assert len(result.checks) == 1
 
@@ -86,10 +88,7 @@ def test_config_loads_anomaly_configuration():
 
     assert check.anomaly is not None
 
-    assert (
-            check.anomaly["enabled"]
-            is True
-    )
+    assert check.anomaly["enabled"] is True
 
     assert (
             check.anomaly["method"]

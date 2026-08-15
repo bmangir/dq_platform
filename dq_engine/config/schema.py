@@ -1,7 +1,12 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from dq_engine.core.models import Severity
+
+
+@dataclass
+class TableConfig:
+    name: str
 
 
 @dataclass
@@ -9,13 +14,13 @@ class CheckConfig:
     name: str
     type: str
     severity: Severity
-    parameters: dict
-    anomaly: dict | None = None
+    parameters: dict[str, Any]
+    anomaly: dict[str, Any] | None = None
 
 
 @dataclass
 class DQConfig:
-    table: str
+    table: TableConfig
     checks: list[CheckConfig]
 
 
@@ -33,6 +38,18 @@ class ConfigValidator:
         if not table:
             raise ValueError(
                 "Configuration must contain 'table'."
+            )
+
+        if not isinstance(table, dict):
+            raise ValueError(
+                "'table' must be a dictionary."
+            )
+
+        table_name = table.get("name")
+
+        if not table_name:
+            raise ValueError(
+                "Table configuration must contain 'name'."
             )
 
         checks = config.get("checks")
@@ -53,11 +70,16 @@ class ConfigValidator:
         ]
 
         return DQConfig(
-            table=table,
+            table=TableConfig(
+                name=table_name,
+            ),
             checks=parsed_checks,
         )
 
-    def _parse_check(self, check: dict) -> CheckConfig:
+    def _parse_check(
+            self,
+            check: dict,
+    ) -> CheckConfig:
 
         if not isinstance(check, dict):
             raise ValueError(
@@ -67,7 +89,6 @@ class ConfigValidator:
         name = check.get("name")
         rule_type = check.get("type")
         severity = check.get("severity")
-        anomaly = check.get("anomaly"),
 
         if not name:
             raise ValueError(
@@ -92,6 +113,8 @@ class ConfigValidator:
                 f"for check '{name}'."
             )
 
+        anomaly = check.get("anomaly")
+
         parameters = {
             key: value
             for key, value in check.items()
@@ -99,6 +122,7 @@ class ConfigValidator:
                 "name",
                 "type",
                 "severity",
+                "anomaly",
             }
         }
 

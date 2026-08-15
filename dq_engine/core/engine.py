@@ -28,7 +28,7 @@ class DQEngine:
 
         context = ExecutionContext(
             source=source,
-            table=self.config.table,
+            table=self.config.table.name,
         )
 
         results = []
