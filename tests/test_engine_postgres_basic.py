@@ -7,7 +7,9 @@ from dq_engine.database.connection import (
 )
 
 
-def test_engine_runs_basic_dq_checks_on_postgres():
+def test_engine_runs_basic_dq_checks_on_postgres(
+        valid_orders_data,
+):
 
     registry = RuleRegistry()
 
@@ -27,14 +29,16 @@ def test_engine_runs_basic_dq_checks_on_postgres():
         backend=backend,
     )
 
-    assert len(results) == 2
+    assert len(results) == 3
 
-    not_null_result = results[0]
+    results_by_name = {
+        result.rule_name: result
+        for result in results
+    }
 
-    assert (
-            not_null_result.rule_name
-            == "order_id_not_null"
-    )
+    not_null_result = results_by_name[
+        "order_id_not_null"
+    ]
 
     assert (
             not_null_result.status
@@ -44,12 +48,9 @@ def test_engine_runs_basic_dq_checks_on_postgres():
     assert not_null_result.total_rows == 5
     assert not_null_result.failed_rows == 1
 
-    row_count_result = results[1]
-
-    assert (
-            row_count_result.rule_name
-            == "orders_row_count"
-    )
+    row_count_result = results_by_name[
+        "orders_row_count"
+    ]
 
     assert (
             row_count_result.status
@@ -58,3 +59,16 @@ def test_engine_runs_basic_dq_checks_on_postgres():
 
     assert row_count_result.total_rows == 5
     assert row_count_result.actual == 5
+
+    unique_result = results_by_name[
+        "order_id_unique"
+    ]
+
+    assert (
+            unique_result.status
+            == CheckStatus.PASSED
+    )
+
+    assert unique_result.total_rows == 5
+    assert unique_result.failed_rows == 0
+    assert unique_result.actual == 0

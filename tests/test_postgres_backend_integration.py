@@ -1,3 +1,5 @@
+import psycopg2
+
 from dq_engine.backends.postgres import PostgresBackend
 from dq_engine.core.context import ExecutionContext
 from dq_engine.core.models import (
@@ -49,12 +51,16 @@ def test_postgres_backend_executes_count_nulls():
     assert result.actual == 1
 
 
-def test_postgres_backend_executes_unique():
+def test_postgres_backend_executes_unique(
+        duplicate_orders_data,
+):
+
+    connection_string = (
+        get_postgres_connection_string()
+    )
 
     backend = PostgresBackend(
-        connection_string=(
-            get_postgres_connection_string()
-        )
+        connection_string=connection_string
     )
 
     plan = ExecutionPlan(
@@ -78,11 +84,7 @@ def test_postgres_backend_executes_unique():
     )
 
     assert result.status == CheckStatus.FAILED
-
     assert result.total_rows == 5
-
     assert result.failed_rows == 1
-
     assert result.expected == 0
-
     assert result.actual == 1

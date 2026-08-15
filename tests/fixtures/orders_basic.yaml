@@ -10,7 +10,11 @@ checks:
   - name: orders_row_count
     type: row_count
     severity: high
-
     threshold:
       min: 1
       max: 100000
+
+  - name: order_id_unique
+    type: unique
+    column: order_id
+    severity: high
