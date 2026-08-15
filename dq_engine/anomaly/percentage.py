@@ -1,16 +1,14 @@
-from statistics import mean, stdev
-
+from dq_engine.anomaly.base import AnomalyDetector
 from dq_engine.core.anomalies import AnomalyResult
 from dq_engine.core.metrics import Metric
-from dq_engine.anomaly.base import AnomalyDetector
 
 
-class ZScoreDetector(AnomalyDetector):
+class PercentageChangeDetector(AnomalyDetector):
 
     def __init__(
             self,
-            threshold: float = 3.0,
-            min_history: int = 5,
+            threshold: float = 0.30,
+            min_history: int = 1,
     ):
         self.threshold = threshold
         self.min_history = min_history
@@ -22,6 +20,7 @@ class ZScoreDetector(AnomalyDetector):
     ) -> AnomalyResult:
 
         if len(history) < self.min_history:
+
             return AnomalyResult(
                 run_id=metric.run_id,
                 rule_name=metric.rule_name,
@@ -31,26 +30,18 @@ class ZScoreDetector(AnomalyDetector):
                 deviation=0.0,
                 score=0.0,
                 is_anomaly=False,
-                method="z_score",
+                method="percentage_change",
                 message=(
                     "Insufficient historical data "
                     "for anomaly detection."
                 ),
             )
 
-        values = [
-            item.value
-            for item in history
-        ]
+        baseline = history[0].value
 
-        baseline = mean(values)
+        if baseline == 0:
 
-        standard_deviation = stdev(values)
-
-        if standard_deviation == 0:
-            is_anomaly = (
-                    metric.value != baseline
-            )
+            is_anomaly = metric.value != 0
 
             score = (
                 float("inf")
@@ -59,9 +50,12 @@ class ZScoreDetector(AnomalyDetector):
             )
 
         else:
-            score = abs(
-                metric.value - baseline
-            ) / standard_deviation
+
+            change = (
+                             metric.value - baseline
+                     ) / abs(baseline)
+
+            score = abs(change)
 
             is_anomaly = (
                     score >= self.threshold
@@ -80,7 +74,7 @@ class ZScoreDetector(AnomalyDetector):
             deviation=deviation,
             score=score,
             is_anomaly=is_anomaly,
-            method="z_score",
+            method="percentage_change",
             message=self._build_message(
                 metric,
                 baseline,
@@ -97,17 +91,16 @@ class ZScoreDetector(AnomalyDetector):
             is_anomaly: bool,
     ) -> str:
 
+        percentage = score * 100
+
         if is_anomaly:
             return (
-                f"{metric.metric_name} value "
-                f"{metric.value} is anomalous. "
-                f"Expected approximately "
-                f"{baseline:.2f}, "
-                f"z-score={score:.2f}."
+                f"{metric.metric_name} changed by "
+                f"{percentage:.2f}% compared with "
+                f"the baseline."
             )
 
         return (
-            f"{metric.metric_name} value "
-            f"{metric.value} is within "
-            f"expected range."
+            f"{metric.metric_name} changed by "
+            f"{percentage:.2f}%, within threshold."
         )
