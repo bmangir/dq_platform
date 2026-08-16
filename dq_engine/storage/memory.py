@@ -60,3 +60,21 @@ class InMemoryResultStore(ResultStore):
                 break
 
         return matched
+
+    def get_metric_history(
+            self,
+            rule_name: str,
+            metric_name: str,
+            limit: int = 30,
+    ) -> list[Metric]:
+
+        matched = [
+            metric
+            for metric in reversed(self._metrics)
+            if (
+                    metric.rule_name == rule_name
+                    and metric.metric_name == metric_name
+            )
+        ]
+
+        return matched[:limit]

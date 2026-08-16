@@ -12,9 +12,16 @@ from dq_engine.core.models import (
 from dq_engine.core.result_store import ResultStore
 from dq_engine.core.results import RunResult
 from dq_engine.core.metrics import Metric
+from dq_engine.core.metric_history import (
+    MetricHistoryProvider,
+)
+from dq_engine.core.metrics import Metric
 
 
-class PostgresResultStore(ResultStore):
+class PostgresResultStore(
+    ResultStore,
+    MetricHistoryProvider,
+):
 
     def __init__(self, connection_string: str):
         self.connection_string = connection_string
@@ -294,3 +301,57 @@ class PostgresResultStore(ResultStore):
                 history.append(run_result)
 
         return history
+
+    def get_metric_history(
+            self,
+            rule_name: str,
+            metric_name: str,
+            limit: int = 30,
+    ) -> list[Metric]:
+
+        connection = psycopg2.connect(
+            self.connection_string
+        )
+
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    run_id,
+                    rule_name,
+                    rule_type,
+                    metric_name,
+                    value,
+                    timestamp
+                FROM dq_metrics
+                WHERE rule_name = %s
+                  AND metric_name = %s
+                ORDER BY timestamp DESC
+                LIMIT %s
+                """,
+                (
+                    rule_name,
+                    metric_name,
+                    limit,
+                ),
+            )
+
+            rows = cursor.fetchall()
+
+            return [
+                Metric(
+                    run_id=UUID(str(row[0])),
+                    rule_name=row[1],
+                    rule_type=row[2],
+                    metric_name=row[3],
+                    value=float(row[4]),
+                    timestamp=row[5],
+                )
+                for row in rows
+            ]
+
+        finally:
+            cursor.close()
+            connection.close()
