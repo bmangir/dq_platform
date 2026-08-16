@@ -1,0 +1,75 @@
+configs/
+└── vertica/
+    └── <database_name>/
+        ├── <schema_1>/
+        │   ├── <table_1>.yaml
+        │   ├── <table_2>.yaml
+        │   └── <table_3>.yaml
+        │
+        ├── <schema_2>/
+        │   ├── <table_4>.yaml
+        │   └── <table_5>.yaml
+        │
+        └── <schema_3>/
+            └── <table_6>.yaml
+
+
+Example:
+configs/
+└── vertica/
+    └── dwh/
+        ├── sales/
+        │   ├── orders.yaml
+        │   ├── order_items.yaml
+        │   └── customers.yaml
+        │
+        ├── finance/
+        │   ├── payments.yaml
+        │   └── invoices.yaml
+        │
+        └── staging/
+            └── raw_orders.yaml
+
+
+YAML Example:
+table:
+  name: sales.orders
+
+checks:
+
+  - name: order_id_not_null
+    type: not_null
+    severity: critical
+
+    column: order_id
+
+    anomaly:
+      enabled: true
+      method: threshold
+      threshold: 0
+      direction: above
+
+  - name: orders_row_count
+    type: row_count
+    severity: high
+
+    threshold:
+      min: 1
+
+    anomaly:
+      enabled: true
+      method: percentage_change
+      threshold: 0.30
+      min_history: 1
+
+  - name: order_id_unique
+    type: unique
+    severity: high
+
+    column: order_id
+
+    anomaly:
+      enabled: true
+      method: z_score
+      threshold: 3.0
+      min_history: 5
