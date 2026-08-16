@@ -82,7 +82,10 @@ class DQEngine:
             run_result
         )
 
+        anomalies = []
+
         if self.anomaly_engine is not None:
+
             for metric in metrics:
 
                 check = next(
@@ -122,17 +125,28 @@ class DQEngine:
                         )
                     )
 
-                self.anomaly_engine.detect(
-                    metric=metric,
-                    history=history,
+                anomaly_result = (
+                    self.anomaly_engine.detect(
+                        metric=metric,
+                        history=history,
+                    )
                 )
 
-        # IMPORTANT:
-        # dq_runs kaydı dq_metrics'ten önce oluşturulmalı.
+                anomalies.append(
+                    anomaly_result
+                )
+
+        run_result.anomalies = anomalies
+
         if self.result_store is not None:
-            self.result_store.save(run_result)
+
+            self.result_store.save(
+                run_result
+            )
 
             if metrics:
-                self.result_store.save_metrics(metrics)
+                self.result_store.save_metrics(
+                    metrics
+                )
 
         return run_result

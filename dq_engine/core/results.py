@@ -3,10 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from dq_engine.core.anomalies import AnomalyResult
-from dq_engine.core.models import (
-    CheckResult,
-    CheckStatus,
-)
+from dq_engine.core.models import CheckResult, CheckStatus
 
 
 @dataclass
@@ -14,7 +11,6 @@ class RunResult:
     run_id: UUID
     started_at: datetime
     finished_at: datetime
-
     results: list[CheckResult]
 
     anomalies: list[AnomalyResult] = field(
@@ -27,16 +23,10 @@ class RunResult:
         if not self.results:
             return False
 
-        if any(
-                result.status != CheckStatus.PASSED
-                for result in self.results
-        ):
-            return False
-
-        if any(
-                anomaly.is_anomaly
-                for anomaly in self.anomalies
-        ):
-            return False
-
-        return True
+        return all(
+            result.status == CheckStatus.PASSED
+            for result in self.results
+        ) and not any(
+            anomaly.is_anomaly
+            for anomaly in self.anomalies
+        )
