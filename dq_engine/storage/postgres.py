@@ -114,7 +114,7 @@ class PostgresResultStore(ResultStore):
                     )
                     """,
                     (
-                        str(run_result.run_id),
+                        str(anomaly.run_id),
                         anomaly.rule_name,
                         anomaly.metric_name,
                         anomaly.actual,
@@ -478,6 +478,69 @@ class PostgresResultStore(ResultStore):
                 metric_name=row[3],
                 value=float(row[4]),
                 timestamp=row[5],
+            )
+            for row in rows
+        ]
+
+    def get_anomaly_history(
+            self,
+            rule_name: str,
+            metric_name: str,
+            limit: int = 30,
+    ) -> list[AnomalyResult]:
+
+        connection = psycopg2.connect(
+            self.connection_string
+        )
+
+        cursor = connection.cursor()
+
+        try:
+
+            cursor.execute(
+                """
+                SELECT
+                    run_id,
+                    rule_name,
+                    metric_name,
+                    actual,
+                    expected,
+                    deviation,
+                    score,
+                    is_anomaly,
+                    method,
+                    message
+                FROM dq_anomalies
+                WHERE rule_name = %s
+                  AND metric_name = %s
+                ORDER BY id DESC
+                LIMIT %s
+                """,
+                (
+                    rule_name,
+                    metric_name,
+                    limit,
+                ),
+            )
+
+            rows = cursor.fetchall()
+
+        finally:
+            cursor.close()
+            connection.close()
+
+        return [
+            AnomalyResult(
+                run_id=UUID(str(row[0])),
+                rule_name=row[1],
+                metric_name=row[2],
+                actual=row[3],
+                expected=row[4],
+                deviation=row[5],
+                score=row[6],
+                is_anomaly=row[7],
+                method=row[8],
+                message=row[9],
             )
             for row in rows
         ]

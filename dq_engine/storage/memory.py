@@ -93,3 +93,21 @@ class InMemoryResultStore(ResultStore):
         ]
 
         return matched[:limit]
+
+    def get_anomaly_history(
+            self,
+            rule_name: str,
+            metric_name: str,
+            limit: int = 30,
+    ) -> list[AnomalyResult]:
+
+        matched = [
+            anomaly
+            for anomaly in reversed(self._anomalies)
+            if (
+                    anomaly.rule_name == rule_name
+                    and anomaly.metric_name == metric_name
+            )
+        ]
+
+        return matched[:limit]
