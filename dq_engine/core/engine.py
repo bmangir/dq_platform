@@ -40,7 +40,11 @@ class DQEngine:
             anomaly_engine=anomaly_engine,
         )
 
-    def run(self, source, backend):
+    def run(
+            self,
+            source,
+            backend,
+    ):
 
         run_context = RunContext.create()
 
@@ -146,7 +150,6 @@ class DQEngine:
             )
 
             if metrics:
-
                 self.result_store.save_metrics(
                     metrics
                 )

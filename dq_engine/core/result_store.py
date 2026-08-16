@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
+from dq_engine.core.anomalies import AnomalyResult
 from dq_engine.core.metrics import Metric
 from dq_engine.core.results import RunResult
 
@@ -17,6 +18,12 @@ class ResultStore(ABC):
     def save_metrics(
             self,
             metrics: list[Metric],
+    ) -> None:
+        raise NotImplementedError
+
+    def save_anomalies(
+            self,
+            anomalies: list[AnomalyResult],
     ) -> None:
         raise NotImplementedError
 

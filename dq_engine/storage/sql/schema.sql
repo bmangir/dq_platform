@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS dq_runs (
     success BOOLEAN NOT NULL
 );
 
+
 CREATE TABLE IF NOT EXISTS dq_check_results (
     id BIGSERIAL PRIMARY KEY,
 
@@ -34,18 +35,6 @@ CREATE TABLE IF NOT EXISTS dq_check_results (
         ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_dq_check_results_run_id
-    ON dq_check_results(run_id);
-
-CREATE INDEX IF NOT EXISTS idx_dq_check_results_rule_name
-    ON dq_check_results(rule_name);
-
-CREATE INDEX IF NOT EXISTS idx_dq_check_results_metric
-    ON dq_check_results(metric);
-
-CREATE INDEX IF NOT EXISTS idx_dq_runs_started_at
-    ON dq_runs(started_at);
-
 
 CREATE TABLE IF NOT EXISTS dq_metrics (
     id BIGSERIAL PRIMARY KEY,
@@ -56,6 +45,7 @@ CREATE TABLE IF NOT EXISTS dq_metrics (
     rule_type VARCHAR(100) NOT NULL,
 
     metric_name VARCHAR(100) NOT NULL,
+
     value DOUBLE PRECISION NOT NULL,
 
     timestamp TIMESTAMP NOT NULL,
@@ -65,18 +55,6 @@ CREATE TABLE IF NOT EXISTS dq_metrics (
         REFERENCES dq_runs(run_id)
         ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_dq_metrics_run_id
-    ON dq_metrics(run_id);
-
-CREATE INDEX IF NOT EXISTS idx_dq_metrics_rule_name
-    ON dq_metrics(rule_name);
-
-CREATE INDEX IF NOT EXISTS idx_dq_metrics_metric_name
-    ON dq_metrics(metric_name);
-
-CREATE INDEX IF NOT EXISTS idx_dq_metrics_timestamp
-    ON dq_metrics(timestamp);
 
 
 CREATE TABLE IF NOT EXISTS dq_anomalies (
@@ -96,6 +74,7 @@ CREATE TABLE IF NOT EXISTS dq_anomalies (
     is_anomaly BOOLEAN NOT NULL,
 
     method VARCHAR(100) NOT NULL,
+
     message TEXT,
 
     CONSTRAINT fk_dq_anomaly_run
@@ -103,6 +82,34 @@ CREATE TABLE IF NOT EXISTS dq_anomalies (
         REFERENCES dq_runs(run_id)
         ON DELETE CASCADE
 );
+
+
+CREATE INDEX IF NOT EXISTS idx_dq_check_results_run_id
+    ON dq_check_results(run_id);
+
+CREATE INDEX IF NOT EXISTS idx_dq_check_results_rule_name
+    ON dq_check_results(rule_name);
+
+CREATE INDEX IF NOT EXISTS idx_dq_check_results_metric
+    ON dq_check_results(metric);
+
+
+CREATE INDEX IF NOT EXISTS idx_dq_runs_started_at
+    ON dq_runs(started_at);
+
+
+CREATE INDEX IF NOT EXISTS idx_dq_metrics_run_id
+    ON dq_metrics(run_id);
+
+CREATE INDEX IF NOT EXISTS idx_dq_metrics_rule_name
+    ON dq_metrics(rule_name);
+
+CREATE INDEX IF NOT EXISTS idx_dq_metrics_metric_name
+    ON dq_metrics(metric_name);
+
+CREATE INDEX IF NOT EXISTS idx_dq_metrics_timestamp
+    ON dq_metrics(timestamp);
+
 
 CREATE INDEX IF NOT EXISTS idx_dq_anomalies_run_id
     ON dq_anomalies(run_id);
