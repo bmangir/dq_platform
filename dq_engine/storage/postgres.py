@@ -1,9 +1,10 @@
 import json
-from datetime import datetime
 from uuid import UUID
 
 import psycopg2
 
+from dq_engine.core.anomalies import AnomalyResult
+from dq_engine.core.metrics import Metric
 from dq_engine.core.models import (
     CheckResult,
     CheckStatus,
@@ -11,17 +12,9 @@ from dq_engine.core.models import (
 )
 from dq_engine.core.result_store import ResultStore
 from dq_engine.core.results import RunResult
-from dq_engine.core.metrics import Metric
-from dq_engine.core.metric_history import (
-    MetricHistoryProvider,
-)
-from dq_engine.core.metrics import Metric
 
 
-class PostgresResultStore(
-    ResultStore,
-    MetricHistoryProvider,
-):
+class PostgresResultStore(ResultStore):
 
     def __init__(self, connection_string: str):
         self.connection_string = connection_string
@@ -31,6 +24,8 @@ class PostgresResultStore(
         connection = psycopg2.connect(
             self.connection_string
         )
+
+        cursor = None
 
         try:
             cursor = connection.cursor()
@@ -102,6 +97,49 @@ class PostgresResultStore(
                     ),
                 )
 
+            for anomaly in run_result.anomalies:
+
+                cursor.execute(
+                    """
+                    INSERT INTO dq_anomalies (
+                        run_id,
+                        rule_name,
+                        metric_name,
+                        actual,
+                        expected,
+                        deviation,
+                        score,
+                        is_anomaly,
+                        method,
+                        message
+                    )
+                    VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s
+                    )
+                    """,
+                    (
+                        str(run_result.run_id),
+                        anomaly.rule_name,
+                        anomaly.metric_name,
+                        anomaly.actual,
+                        anomaly.expected,
+                        anomaly.deviation,
+                        anomaly.score,
+                        anomaly.is_anomaly,
+                        anomaly.method,
+                        anomaly.message,
+                    ),
+                )
+
             connection.commit()
 
         except Exception:
@@ -109,7 +147,9 @@ class PostgresResultStore(
             raise
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+
             connection.close()
 
     def save_metrics(
@@ -123,6 +163,8 @@ class PostgresResultStore(
         connection = psycopg2.connect(
             self.connection_string
         )
+
+        cursor = None
 
         try:
             cursor = connection.cursor()
@@ -165,7 +207,9 @@ class PostgresResultStore(
             raise
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+
             connection.close()
 
     def get_run(
@@ -176,6 +220,8 @@ class PostgresResultStore(
         connection = psycopg2.connect(
             self.connection_string
         )
+
+        cursor = None
 
         try:
             cursor = connection.cursor()
@@ -241,15 +287,58 @@ class PostgresResultStore(
                     )
                 )
 
+            cursor.execute(
+                """
+                SELECT
+                    rule_name,
+                    metric_name,
+                    actual,
+                    expected,
+                    deviation,
+                    score,
+                    is_anomaly,
+                    method,
+                    message
+                FROM dq_anomalies
+                WHERE run_id = %s
+                ORDER BY id
+                """,
+                (str(run_id),),
+            )
+
+            anomaly_rows = cursor.fetchall()
+
+            anomalies = []
+
+            for row in anomaly_rows:
+
+                anomalies.append(
+                    AnomalyResult(
+                        run_id=UUID(str(run_id)),
+                        rule_name=row[0],
+                        metric_name=row[1],
+                        actual=row[2],
+                        expected=row[3],
+                        deviation=row[4],
+                        score=row[5],
+                        is_anomaly=row[6],
+                        method=row[7],
+                        message=row[8],
+                    )
+                )
+
             return RunResult(
                 run_id=UUID(str(run_row[0])),
                 started_at=run_row[1],
                 finished_at=run_row[2],
                 results=results,
+                anomalies=anomalies,
             )
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+
             connection.close()
 
     def get_history(
@@ -261,6 +350,8 @@ class PostgresResultStore(
         connection = psycopg2.connect(
             self.connection_string
         )
+
+        cursor = None
 
         try:
             cursor = connection.cursor()
@@ -288,7 +379,9 @@ class PostgresResultStore(
             ]
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+
             connection.close()
 
         history = []
@@ -312,6 +405,8 @@ class PostgresResultStore(
         connection = psycopg2.connect(
             self.connection_string
         )
+
+        cursor = None
 
         try:
             cursor = connection.cursor()
@@ -353,5 +448,7 @@ class PostgresResultStore(
             ]
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+
             connection.close()
