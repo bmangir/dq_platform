@@ -75,7 +75,7 @@ class DQEngine:
 
         finished_at = datetime.utcnow()
 
-        run_result = RunResult(
+        base_run_result = RunResult(
             run_id=run_context.run_id,
             started_at=run_context.started_at,
             finished_at=finished_at,
@@ -83,7 +83,7 @@ class DQEngine:
         )
 
         metrics = MetricExtractor().extract(
-            run_result
+            base_run_result
         )
 
         anomalies = []
@@ -141,7 +141,13 @@ class DQEngine:
                     anomaly_result
                 )
 
-        run_result.anomalies = anomalies
+        run_result = RunResult(
+            run_id=run_context.run_id,
+            started_at=run_context.started_at,
+            finished_at=finished_at,
+            results=results,
+            anomalies=anomalies,
+        )
 
         if self.result_store is not None:
 
