@@ -50,11 +50,3 @@ class ResultStore(ABC):
             limit: int = 30,
     ) -> list[Metric]:
         pass
-
-    def get_anomaly_history(
-            self,
-            rule_name: str,
-            metric_name: str,
-            limit: int = 30,
-    ) -> list[AnomalyResult]:
-        raise NotImplementedError

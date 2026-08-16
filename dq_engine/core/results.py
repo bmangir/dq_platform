@@ -19,7 +19,6 @@ class RunResult:
 
     @property
     def success(self) -> bool:
-
         if not self.results:
             return False
 
