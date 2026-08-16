@@ -10,6 +10,17 @@ class TableConfig:
 
 
 @dataclass
+class StorageConfig:
+    type: str
+    schema: str
+
+    runs_table: str = "dq_runs"
+    check_results_table: str = "dq_check_results"
+    metrics_table: str = "dq_metrics"
+    anomalies_table: str = "dq_anomalies"
+
+
+@dataclass
 class CheckConfig:
     name: str
     type: str
@@ -21,6 +32,7 @@ class CheckConfig:
 @dataclass
 class DQConfig:
     table: TableConfig
+    storage: StorageConfig
     checks: list[CheckConfig]
 
 
@@ -52,6 +64,53 @@ class ConfigValidator:
                 "Table configuration must contain 'name'."
             )
 
+        storage = config.get("storage")
+
+        if not storage:
+            raise ValueError(
+                "Configuration must contain 'storage'."
+            )
+
+        if not isinstance(storage, dict):
+            raise ValueError(
+                "'storage' must be a dictionary."
+            )
+
+        storage_type = storage.get("type")
+
+        if not storage_type:
+            raise ValueError(
+                "Storage configuration must contain 'type'."
+            )
+
+        storage_schema = storage.get("schema")
+
+        if not storage_schema:
+            raise ValueError(
+                "Storage configuration must contain 'schema'."
+            )
+
+        storage_config = StorageConfig(
+            type=storage_type,
+            schema=storage_schema,
+            runs_table=storage.get(
+                "runs_table",
+                "dq_runs",
+            ),
+            check_results_table=storage.get(
+                "check_results_table",
+                "dq_check_results",
+            ),
+            metrics_table=storage.get(
+                "metrics_table",
+                "dq_metrics",
+            ),
+            anomalies_table=storage.get(
+                "anomalies_table",
+                "dq_anomalies",
+            ),
+        )
+
         checks = config.get("checks")
 
         if not checks:
@@ -73,6 +132,7 @@ class ConfigValidator:
             table=TableConfig(
                 name=table_name,
             ),
+            storage=storage_config,
             checks=parsed_checks,
         )
 

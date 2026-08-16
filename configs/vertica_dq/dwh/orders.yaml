@@ -1,0 +1,48 @@
+table:
+  name: warehouse.orders
+
+storage:
+  type: vertica
+  schema: dq_platform
+  runs_table: dq_runs
+  check_results_table: dq_check_results
+  metrics_table: dq_metrics
+  anomalies_table: dq_anomalies
+
+checks:
+
+  - name: orders_row_count
+    type: row_count
+    severity: critical
+
+    threshold:
+      min: 1000
+      max: 100000
+
+    anomaly:
+      enabled: true
+      method: z_score
+      threshold: 3.0
+      min_history: 5
+
+  - name: orders_id_not_null
+    type: not_null
+    severity: critical
+
+    column: order_id
+
+  - name: orders_id_unique
+    type: unique
+    severity: critical
+
+    column: order_id
+
+  - name: orders_status_valid
+    type: accepted_values
+    severity: high
+
+    column: status
+    values:
+      - CREATED
+      - COMPLETED
+      - CANCELLED
