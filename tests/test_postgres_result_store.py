@@ -292,3 +292,56 @@ def test_postgres_result_store_saves_and_gets_anomaly(
     assert anomaly.score == 1.0
     assert anomaly.is_anomaly is True
     assert anomaly.method == "threshold"
+
+
+def test_postgres_result_store_metric_history(
+        valid_orders_data,
+):
+
+    from datetime import datetime
+    from uuid import uuid4
+
+    from dq_engine.core.metrics import Metric
+    from dq_engine.core.results import RunResult
+
+    store = PostgresResultStore(
+        get_postgres_connection_string()
+    )
+
+    run_id = uuid4()
+
+    run_result = RunResult(
+        run_id=run_id,
+        started_at=datetime.utcnow(),
+        finished_at=datetime.utcnow(),
+        results=[],
+    )
+
+    store.save(run_result)
+
+    metric = Metric(
+        run_id=run_id,
+        rule_name="orders_row_count",
+        rule_type="row_count",
+        metric_name="row_count",
+        value=5.0,
+        timestamp=run_result.finished_at,
+    )
+
+    store.save_metrics([metric])
+
+    history = store.get_metric_history(
+        rule_name="orders_row_count",
+        metric_name="row_count",
+        limit=30,
+    )
+
+    assert len(history) >= 1
+
+    assert any(
+        item.run_id == run_id
+        and item.rule_name == "orders_row_count"
+        and item.metric_name == "row_count"
+        and item.value == 5.0
+        for item in history
+    )
