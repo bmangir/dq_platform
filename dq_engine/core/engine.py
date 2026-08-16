@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from dq_engine.anomaly.engine import AnomalyEngine
+from dq_engine.anomaly.factory import AnomalyDetectorFactory
 from dq_engine.config.loader import ConfigLoader
 from dq_engine.core.context import ExecutionContext
 from dq_engine.core.metric_extractor import MetricExtractor
@@ -75,7 +76,7 @@ class DQEngine:
 
         finished_at = datetime.utcnow()
 
-        base_run_result = RunResult(
+        run_result = RunResult(
             run_id=run_context.run_id,
             started_at=run_context.started_at,
             finished_at=finished_at,
@@ -83,7 +84,7 @@ class DQEngine:
         )
 
         metrics = MetricExtractor().extract(
-            base_run_result
+            run_result
         )
 
         anomalies = []
@@ -130,8 +131,18 @@ class DQEngine:
                         )
                     )
 
+                detector = (
+                    AnomalyDetectorFactory.create(
+                        anomaly_config
+                    )
+                )
+
+                anomaly_engine = AnomalyEngine(
+                    detector=detector
+                )
+
                 anomaly_result = (
-                    self.anomaly_engine.detect(
+                    anomaly_engine.detect(
                         metric=metric,
                         history=history,
                     )
@@ -141,13 +152,7 @@ class DQEngine:
                     anomaly_result
                 )
 
-        run_result = RunResult(
-            run_id=run_context.run_id,
-            started_at=run_context.started_at,
-            finished_at=finished_at,
-            results=results,
-            anomalies=anomalies,
-        )
+        run_result.anomalies = anomalies
 
         if self.result_store is not None:
 
@@ -158,6 +163,11 @@ class DQEngine:
             if metrics:
                 self.result_store.save_metrics(
                     metrics
+                )
+
+            if anomalies:
+                self.result_store.save_anomalies(
+                    anomalies
                 )
 
         return run_result
