@@ -5,6 +5,9 @@ from dq_engine.core.registry import RuleRegistry
 from dq_engine.database.connection import (
     get_postgres_connection_string,
 )
+from dq_engine.storage.postgres import (
+    PostgresResultStore,
+)
 
 
 def test_engine_runs_basic_dq_checks_on_postgres(
@@ -12,10 +15,16 @@ def test_engine_runs_basic_dq_checks_on_postgres(
 ):
 
     registry = RuleRegistry()
+    result_store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
 
     engine = DQEngine.from_config(
         "tests/fixtures/orders_basic.yaml",
         registry=registry,
+        result_store=result_store,
     )
 
     backend = PostgresBackend(
@@ -87,10 +96,16 @@ def test_engine_runs_accepted_values_on_postgres(
 ):
 
     registry = RuleRegistry()
+    result_store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
 
     engine = DQEngine.from_config(
         "tests/fixtures/orders_validity.yaml",
         registry=registry,
+        result_store=result_store
     )
 
     backend = PostgresBackend(
@@ -133,10 +148,16 @@ def test_engine_accepts_valid_values_on_postgres(
 ):
 
     registry = RuleRegistry()
+    result_store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
 
     engine = DQEngine.from_config(
         "tests/fixtures/orders_validity.yaml",
         registry=registry,
+        result_store=result_store
     )
 
     backend = PostgresBackend(
@@ -180,10 +201,16 @@ def test_engine_runs_range_on_postgres(
 ):
 
     registry = RuleRegistry()
+    result_store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
 
     engine = DQEngine.from_config(
         "tests/fixtures/orders_range.yaml",
         registry=registry,
+        result_store=result_store
     )
 
     backend = PostgresBackend(
@@ -228,10 +255,16 @@ def test_engine_accepts_valid_range_on_postgres(
 ):
 
     registry = RuleRegistry()
+    result_store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
 
     engine = DQEngine.from_config(
         "tests/fixtures/orders_range.yaml",
         registry=registry,
+        result_store=result_store
     )
 
     backend = PostgresBackend(

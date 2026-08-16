@@ -6,15 +6,24 @@ from dq_engine.core.registry import RuleRegistry
 from dq_engine.database.connection import (
     get_postgres_connection_string,
 )
+from dq_engine.storage.postgres import (
+    PostgresResultStore,
+)
 
 
 def test_engine_runs_not_null_check_on_postgres():
 
     registry = RuleRegistry()
+    result_store = PostgresResultStore(
+        connection_string=(
+            get_postgres_connection_string()
+        )
+    )
 
     engine = DQEngine.from_config(
         "tests/fixtures/not_null.yaml",
         registry=registry,
+        result_store=result_store
     )
 
     backend = PostgresBackend(

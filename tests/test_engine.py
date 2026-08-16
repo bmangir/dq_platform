@@ -1,16 +1,21 @@
 from dq_engine.core.engine import DQEngine
 from dq_engine.core.registry import RuleRegistry
 from fixtures.mock_backend import MockBackend
+from dq_engine.storage.memory import (
+    InMemoryResultStore,
+)
 
 
 
 def test_engine_runs_not_null_rule():
 
     registry = RuleRegistry()
+    result_store = InMemoryResultStore()
 
     engine = DQEngine.from_config(
         "tests/fixtures/not_null.yaml",
         registry=registry,
+        result_store=result_store,
     )
 
     backend = MockBackend()
