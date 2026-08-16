@@ -19,6 +19,9 @@ checks:
     type: row_count
     severity: high
 
+    threshold:
+      min: 1
+
     anomaly:
       enabled: true
       method: percentage_change
