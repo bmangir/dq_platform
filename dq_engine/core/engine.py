@@ -21,7 +21,6 @@ class DQEngine:
         self.registry = registry
         self.result_store = result_store
         self.anomaly_engine = anomaly_engine
-        self.metric_extractor = MetricExtractor()
 
     @classmethod
     def from_config(
@@ -70,11 +69,70 @@ class DQEngine:
 
             results.append(result)
 
+        finished_at = datetime.utcnow()
+
         run_result = RunResult(
             run_id=run_context.run_id,
             started_at=run_context.started_at,
-            finished_at=datetime.utcnow(),
+            finished_at=finished_at,
             results=results,
         )
+
+        metrics = MetricExtractor().extract(
+            run_result
+        )
+
+        if self.anomaly_engine is not None:
+            for metric in metrics:
+
+                check = next(
+                    (
+                        check
+                        for check in self.config.checks
+                        if check.name == metric.rule_name
+                    ),
+                    None,
+                )
+
+                if check is None:
+                    continue
+
+                anomaly_config = check.anomaly
+
+                if not anomaly_config:
+                    continue
+
+                if not anomaly_config.get(
+                        "enabled",
+                        False,
+                ):
+                    continue
+
+                history = []
+
+                if self.result_store is not None:
+                    history = (
+                        self.result_store.get_metric_history(
+                            rule_name=metric.rule_name,
+                            metric_name=metric.metric_name,
+                            limit=anomaly_config.get(
+                                "min_history",
+                                30,
+                            ),
+                        )
+                    )
+
+                self.anomaly_engine.detect(
+                    metric=metric,
+                    history=history,
+                )
+
+        # IMPORTANT:
+        # dq_runs kaydı dq_metrics'ten önce oluşturulmalı.
+        if self.result_store is not None:
+            self.result_store.save(run_result)
+
+            if metrics:
+                self.result_store.save_metrics(metrics)
 
         return run_result
