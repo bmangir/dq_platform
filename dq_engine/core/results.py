@@ -26,7 +26,4 @@ class RunResult:
         return all(
             result.status == CheckStatus.PASSED
             for result in self.results
-        ) and not any(
-            anomaly.is_anomaly
-            for anomaly in self.anomalies
         )

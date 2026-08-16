@@ -236,3 +236,59 @@ def test_postgres_result_store_saves_metric():
     )
 
     store.save_metrics([metric])
+
+
+def test_postgres_result_store_saves_and_gets_anomaly(
+        valid_orders_data,
+):
+
+    from datetime import datetime
+    from uuid import uuid4
+
+    from dq_engine.core.anomalies import AnomalyResult
+
+    store = PostgresResultStore(
+        get_postgres_connection_string()
+    )
+
+    run_id = uuid4()
+
+    run_result = RunResult(
+        run_id=run_id,
+        started_at=datetime.utcnow(),
+        finished_at=datetime.utcnow(),
+        results=[],
+        anomalies=[
+            AnomalyResult(
+                run_id=run_id,
+                rule_name="orders_row_count",
+                metric_name="row_count",
+                actual=10.0,
+                expected=5.0,
+                deviation=5.0,
+                score=1.0,
+                is_anomaly=True,
+                method="threshold",
+                message="row_count exceeded threshold.",
+            )
+        ],
+    )
+
+    store.save(run_result)
+
+    loaded = store.get_run(run_id)
+
+    assert loaded is not None
+
+    assert len(loaded.anomalies) == 1
+
+    anomaly = loaded.anomalies[0]
+
+    assert anomaly.rule_name == "orders_row_count"
+    assert anomaly.metric_name == "row_count"
+    assert anomaly.actual == 10.0
+    assert anomaly.expected == 5.0
+    assert anomaly.deviation == 5.0
+    assert anomaly.score == 1.0
+    assert anomaly.is_anomaly is True
+    assert anomaly.method == "threshold"

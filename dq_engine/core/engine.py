@@ -114,6 +114,7 @@ class DQEngine:
                 history = []
 
                 if self.result_store is not None:
+
                     history = (
                         self.result_store.get_metric_history(
                             rule_name=metric.rule_name,
@@ -145,6 +146,7 @@ class DQEngine:
             )
 
             if metrics:
+
                 self.result_store.save_metrics(
                     metrics
                 )
