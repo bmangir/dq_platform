@@ -1,0 +1,37 @@
+CRITICAL
+HIGH
+MEDIUM
+LOW
+WARNING
+
+
+order_id NULL
+→ CRITICAL
+
+duplicate order_id
+→ CRITICAL
+
+invalid order_status
+→ HIGH
+
+unexpected category
+→ MEDIUM
+
+null customer_phone
+→ LOW
+
+Airflow Davranışı:
+CRITICAL
+   ↓
+Airflow task FAILED
+   ↓
+Alert
+
+---
+WARNING
+   ↓
+Airflow task SUCCESS
+   ↓
+DQ result = WARNING
+   ↓
+Slack notification

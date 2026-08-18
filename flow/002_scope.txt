@@ -1,0 +1,60 @@
+Schema:
+column exists
+data type
+nullable
+column count
+schema evolution
+
+Completeness:
+null %
+empty %
+missing records
+expected row count
+
+Uniqueness:
+unique column
+duplicate rows
+composite uniqueness
+
+Validity:
+range
+regex
+allowed values
+date validity
+email validity
+
+Accuracy / Consistency:
+FK integrity
+cross-column validation
+cross-table validation
+
+Timeliness:
+data freshness
+maximum allowed delay
+latest record timestamp
+
+Volume:
+row count
+row count anomaly
+sudden increase
+sudden decrease
+
+Distribution:
+mean
+min/max
+percentiles
+null ratio
+category distribution
+
+Business Rule(Example):
+order_amount > 0
+
+order_status IN (
+    'completed',
+    'cancelled',
+    'pending'
+)
+
+completed_order must have payment_id
+
+order_date <= current_date

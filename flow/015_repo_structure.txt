@@ -1,0 +1,62 @@
+data-quality-framework/
+│
+├── README.md
+├── docker-compose.yml
+├── requirements.txt
+├── Makefile
+│
+├── configs/
+│   ├── users.yaml
+│   ├── orders.yaml
+│   └── products.yaml
+│
+├── dq/
+│   ├── __init__.py
+│   │
+│   ├── engine/
+│   │   ├── runner.py
+│   │   ├── evaluator.py
+│   │   └── registry.py
+│   │
+│   ├── checks/
+│   │   ├── schema.py
+│   │   ├── completeness.py
+│   │   ├── uniqueness.py
+│   │   ├── validity.py
+│   │   ├── freshness.py
+│   │   ├── volume.py
+│   │   ├── distribution.py
+│   │   └── integrity.py
+│   │
+│   ├── profiler/
+│   │   └── profiler.py
+│   │
+│   ├── storage/
+│   │   ├── models.py
+│   │   └── repository.py
+│   │
+│   ├── alerts/
+│   │   ├── slack.py
+│   │   └── email.py
+│   │
+│   └── config/
+│       └── loader.py
+│
+├── airflow/
+│   ├── dags/
+│   │   └── ecommerce_dq.py
+│   └── operators/
+│       └── dq_operator.py
+│
+├── dashboard/
+│   └── app.py
+│
+├── tests/
+│   ├── test_schema.py
+│   ├── test_completeness.py
+│   ├── test_uniqueness.py
+│   ├── test_freshness.py
+│   └── test_engine.py
+│
+└── examples/
+    └── ecommerce/

@@ -1,0 +1,22 @@
+Örnek:
+orders.customer_id
+        ↓
+users.customer_id
+
+
+Rule: YAML
+- name: valid_customer_reference
+  type: foreign_key
+  column: customer_id
+  reference:
+    table: users
+    column: customer_id
+  severity: critical
+
+
+Sonuç:
+orders rows:          1,000,000
+invalid references:       123
+failure rate:           0.0123%
+
+FAIL

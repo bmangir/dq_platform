@@ -1,0 +1,29 @@
+DQ çalışmadan önce:
+
+Data Profiler
+
+çalıştırabiliriz.
+
+Örnek:
+orders
+
+rows:             2,341,928
+
+order_id
+  null:           0%
+  unique:         100%
+  distinct:       2,341,928
+
+order_amount
+  null:           0.02%
+  min:            2.50
+  max:            9812.20
+  avg:            142.32
+
+order_status
+  completed:      81.2%
+  pending:         7.3%
+  cancelled:      11.5%
+
+
+Bu profiler'ın sonuçlarını metadata DB'ye kaydedebiliriz.

@@ -1,0 +1,32 @@
+Özellikle Airflow için çok önemli.
+
+YAML:
+- name: orders_freshness
+  type: freshness
+  column: updated_at
+  max_delay_minutes: 60
+  severity: critical
+
+Framework:
+current time:
+14:00
+
+latest updated_at:
+13:48
+
+delay:
+12 minutes
+
+→ PASS
+
+
+Ama:
+latest updated_at:
+09:20
+
+delay:
+280 minutes
+
+→ FAIL
+
+Bu doğrudan production'da kullanılabilecek bir feature.

@@ -1,0 +1,39 @@
+Monday
+1.2M rows
+
+Tuesday
+1.3M
+
+Wednesday
+1.25M
+
+Thursday
+1.28M
+
+Friday
+82K  ← 🚨
+
+-----
+current = 82K
+expected = 1.26M
+
+deviation = -93.5%
+
+→ VOLUME ANOMALY
+
+
+----
+İlk versiyonda basit:
+
+mean ± threshold
+
+yeterli.
+
+Sonra istersen:
+
+rolling average
+standard deviation
+z-score
+percentile
+
+eklenecek.

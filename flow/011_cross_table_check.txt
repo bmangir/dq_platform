@@ -1,0 +1,13 @@
+orders
+payments
+
+Businees rule:
+completed orders must have payment
+
+Rule
+- name: completed_orders_have_payment
+  type: cross_table
+  severity: critical
+
+
+
